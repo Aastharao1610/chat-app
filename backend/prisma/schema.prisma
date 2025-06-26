@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model PendingUser {
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String   @unique
+  hashedPassword String
+  token          String   @unique
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  verified       Boolean  @default(false)
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String         @unique
+  password     String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  messages     Message[]
+  chats        Chat[]         @relation("UserChats")
+  RefreshToken RefreshToken[]
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+}
+
+model Chat {
+  id        Int       @id @default(autoincrement())
+  users     User[]    @relation("UserChats")
+  messages  Message[]
+  createdAt DateTime  @default(now())
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  text      String
+  senderId  Int
+  chatId    Int
+  createdAt DateTime @default(now())
+
+  sender User @relation(fields: [senderId], references: [id])
+  chat   Chat @relation(fields: [chatId], references: [id])
+}
