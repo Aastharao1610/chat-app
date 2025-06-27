@@ -1,53 +1,65 @@
 // import dotenv from "dotenv";
-
 // dotenv.config();
+
 // import express from "express";
 // import cors from "cors";
+// import cookieParser from "cookie-parser";
 // import authRoutes from "./modules/auth/auth.route.js";
+// import messageRoutes from "./modules/message/message.route.js";
+
 // import errorMiddleware from "./middleware/error.middleware.js";
 
 // const app = express();
 
-// app.use(cors());
+// app.use(
+//   cors({
+//     origin: "http://localhost:3000",
+//     credentials: true,
+//   })
+// );
+
 // app.use(express.json());
+// app.use(cookieParser());
 
-// // Routes
+// app.use((req, res, next) => {
+//   console.log("Cookies:", req.cookies);
+//   next();
+// });
+
 // app.use("/api/auth", authRoutes);
+// app.use("/api", messageRoutes);
 
-// // Error handler (must be last)
 // app.use(errorMiddleware);
 
 // export default app;
 
-import dotenv from "dotenv";
-dotenv.config();
-
 import express from "express";
-
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.route.js";
+import messageRoutes from "./modules/message/message.route.js";
 import errorMiddleware from "./middleware/error.middleware.js";
 
 const app = express();
 
-// Use CORS here with your frontend origin and credentials
+// CORS + Parsers
 app.use(
   cors({
     origin: "http://localhost:3000",
     credentials: true,
   })
 );
-
 app.use(express.json());
+app.use(cookieParser());
 
-// Routes
-app.use("/api/auth", authRoutes);
 app.use((req, res, next) => {
-  console.log("Cookies:", req.cookies);
+  req.io = app.get("io");
   next();
 });
 
-// Error handler (must be last)
+app.use("/api/auth", authRoutes);
+app.use("/api", messageRoutes);
+
 app.use(errorMiddleware);
 
 export default app;

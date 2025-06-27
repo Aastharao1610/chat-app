@@ -1,52 +1,41 @@
-// "use client";
-// import { useState } from "react";
-// import { Button } from "@/components/ui/button";
-// import ChatRequestModal from "../../components/ChatrequestModal/chatRequestModal";
-// import ChatBox from "../../components/chatBox/chatBox";
-
-// const ChatPage = () => {
-//   const [showModal, setShowModal] = useState(false);
-//   const [isAccepted, setIsAccepted] = useState(false); // control after request accepted
-//   console.log("Rendering ChatPage"); // for /chat
-
-//   return (
-//     <div className="max-w-3xl mx-auto">
-//       <div className="flex justify-between items-center mb-4">
-//         <h2 className="text-2xl font-semibold">Your Chats</h2>
-//         <Button onClick={() => setShowModal(true)}>New Chat</Button>
-//       </div>
-
-//       {!isAccepted ? (
-//         <div className="text-gray-500 text-center mt-20">
-//           Chat will appear here after a request is accepted.
-//         </div>
-//       ) : (
-//         <ChatBox />
-//       )}
-
-//       <ChatRequestModal open={showModal} onClose={() => setShowModal(false)} />
-//     </div>
-//   );
-// };
-
-// export default ChatPage;
-
-// app/chat/page.jsx
 "use client";
+import { useState } from "react";
+import { useSelector } from "react-redux";
 import Sidebar from "../../components/SideBar/SideBar";
 import ChatHeader from "../../components/chat/ChatHeader";
-import ChatMessages from "../../components/chat/chatMessage";
-import ChatInput from "../../components/ChatInput/ChatInput";
+import ChatMessages from "@/components/ChatMessage/ChatMessage";
+import ChatInput from "@/components/ChatInput/ChatInput";
+import ChatRequestModal from "@/components/ChatrequestModal/chatRequestModal";
+import { Button } from "@/components/ui/button";
 
 const ChatPage = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState({
+    id: 2,
+    name: "Jane Doe",
+  });
+  const [chatId, setChatId] = useState(1); // Replace with actual selected chatId
+  const { user: currentUser } = useSelector((state) => state.auth);
+
   return (
     <div className="flex h-[calc(100vh-80px)]">
       <Sidebar />
-      <div className="flex flex-col flex-1  bg-gray-50">
+      <div className="flex flex-col flex-1 bg-gray-50 dark:bg-background">
+        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+          <h2 className="text-2xl font-bold">Chats</h2>
+          <Button onClick={() => setShowModal(true)}>New Chat</Button>
+        </div>
+
         <ChatHeader />
         <ChatMessages />
-        <ChatInput />
+        <ChatInput
+          currentUser={currentUser}
+          selectedUser={selectedUser}
+          currentChatId={chatId}
+        />
       </div>
+
+      <ChatRequestModal open={showModal} onClose={() => setShowModal(false)} />
     </div>
   );
 };

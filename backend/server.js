@@ -1,38 +1,33 @@
-// // import authRoutes from "././src/modules/auth/auth.routes.js";
-
-// import cors from "cors";
-// import cookieParser from "cookie-parser";
-// import app from "./src/app.js";
-
-// const PORT = process.env.PORT || 5000;
-
-// app.use(
-//   cors({
-//     origin: "http://localhost:3000",
-//     credentials: true,
-//   })
-// );
-// app.get("/", (req, res) => {
-//   res.send("<h1>Hello from Express!</h1>");
-// });
-// app.use(cookieParser());
-// // app.use("/api/auth", authRoutes);
-// app.listen(PORT, () => {
-//   console.log(`Server is listening at http://localhost:${PORT}`);
-// });
-
-import cookieParser from "cookie-parser";
-app.use(cookieParser());
+import http from "http";
+import { Server } from "socket.io";
 import app from "./src/app.js";
 
-const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
 
-// Add cookie parser here (since it's not yet in app.js)
-
-app.get("/", (req, res) => {
-  res.send("<h1>Hello from Express!</h1>");
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is listening at http://localhost:${PORT}`);
+// ✅ store io on app so middleware can use it
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  console.log("Client connected", socket.id);
+
+  socket.on("send-message", (data) => {
+    console.log("Message via socket:", data);
+    socket.broadcast.emit("receive-message", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+});
+
+server.listen(5000, () => {
+  console.log("Server running on http://localhost:5000");
 });

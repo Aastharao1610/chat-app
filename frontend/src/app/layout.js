@@ -5,6 +5,8 @@ import Header from "../components/Header/Header";
 import Footer from "@/components/Footer/Footer";
 import { ToastContainer, toast } from "react-toastify";
 
+import LayoutWrapper from "@/components/layoutWrapper/layoutWrapper";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -17,9 +19,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
         <ToastContainer />
-        <Header />
-        <main className="min-h-[calc(100vh-120px)] ">{children}</main>
-        <Footer />
+        <LayoutWrapper>
+          <main className="min-h-[calc(100vh-120px)] ">{children}</main>
+        </LayoutWrapper>
       </body>
     </html>
   );

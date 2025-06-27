@@ -1,6 +1,28 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* globals.css */
+
+:root {
+  --bg: #ffffff;
+  --text: #000000;
+  --muted: #f5f5f5;
+  --primary: #1e40af;
+  --secondary: #f97316;
+  --card: #ffffff;
+  --border: #e5e7eb;
+}
+
+.dark {
+  --bg: #0f172a;
+  --text: #ffffff;
+  --muted: #1e293b;
+  --primary: #3b82f6;
+  --secondary: #fb923c;
+  --card: #1e293b;
+  --border: #334155;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
