@@ -4,7 +4,8 @@ let socket;
 
 export const initSocket = () => {
   if (!socket) {
-    socket = io("http://localhost:5000", {
+    console.log("Connecting to socket server on port 4001 ✅");
+    socket = io("http://localhost:4001", {
       withCredentials: true,
     });
   }

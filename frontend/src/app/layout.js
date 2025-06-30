@@ -1,9 +1,6 @@
-// app/layout.jsx
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Header from "../components/Header/Header";
-import Footer from "@/components/Footer/Footer";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 
 import LayoutWrapper from "@/components/layoutWrapper/layoutWrapper";
 

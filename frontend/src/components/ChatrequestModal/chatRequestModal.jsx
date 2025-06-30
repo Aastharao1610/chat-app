@@ -7,24 +7,47 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useSelector } from "react-redux";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import axios from "axios";
 import { toast } from "react-toastify";
+import { getSocket } from "@/lib/socket";
 
 const ChatRequestModal = ({ open, onClose }) => {
   const [email, setEmail] = useState("");
 
-  const handleSend = () => {
-    if (!email.includes("@")) {
-      toast.error("Enter a valid email");
-      return;
+  const { user: currentUser } = useSelector((state) => state.auth); // ✅ ensure inside component
+  const handleSend = async () => {
+    console.log("📤 Sending request...");
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/request/send",
+        {
+          senderId: currentUser.id,
+          receiverEmail: email,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      console.log("✅ Response received:", response); // This should now print
+
+      const newRequest = response.data.request;
+      console.log("📦 New chat request:", newRequest);
+
+      const socket = getSocket();
+      socket?.emit("new-chat-request", newRequest); // ✅ Send full data
+
+      toast.success(`Request sent to ${email}`);
+      onClose();
+      setEmail("");
+    } catch (err) {
+      console.error("❌ Error sending request:", err);
+      toast.error(err.response?.data?.message || "Failed to send request");
     }
-
-    toast.success(`Request sent to ${email}`);
-    onClose();
-    setEmail("");
   };
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">

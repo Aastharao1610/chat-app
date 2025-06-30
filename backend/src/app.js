@@ -1,44 +1,10 @@
-// import dotenv from "dotenv";
-// dotenv.config();
-
-// import express from "express";
-// import cors from "cors";
-// import cookieParser from "cookie-parser";
-// import authRoutes from "./modules/auth/auth.route.js";
-// import messageRoutes from "./modules/message/message.route.js";
-
-// import errorMiddleware from "./middleware/error.middleware.js";
-
-// const app = express();
-
-// app.use(
-//   cors({
-//     origin: "http://localhost:3000",
-//     credentials: true,
-//   })
-// );
-
-// app.use(express.json());
-// app.use(cookieParser());
-
-// app.use((req, res, next) => {
-//   console.log("Cookies:", req.cookies);
-//   next();
-// });
-
-// app.use("/api/auth", authRoutes);
-// app.use("/api", messageRoutes);
-
-// app.use(errorMiddleware);
-
-// export default app;
-
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.route.js";
 import messageRoutes from "./modules/message/message.route.js";
 import errorMiddleware from "./middleware/error.middleware.js";
+import chatRequestRoutes from "./modules/request/chatrequest.route.js";
 
 const app = express();
 
@@ -58,8 +24,8 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api", messageRoutes);
-
+app.use("/api/message", messageRoutes);
+app.use("/api/request", chatRequestRoutes);
 app.use(errorMiddleware);
 
 export default app;

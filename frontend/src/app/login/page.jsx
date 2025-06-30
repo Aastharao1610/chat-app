@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import VerificationModal from "@/components/modal/verificationModal";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginSignup() {
   const [isSignup, setIsSignup] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const router = useRouter();
 
   const {
@@ -140,7 +143,7 @@ export default function LoginSignup() {
             )}
           </div>
 
-          <div>
+          {/* <div>
             <input
               type="password"
               placeholder="Password"
@@ -150,6 +153,28 @@ export default function LoginSignup() {
                 minLength: { value: 6, message: "Minimum 6 characters" },
               })}
             />
+            {errors.password && (
+              <p className="text-sm text-red-600 mt-1">
+                {errors.password.message}
+              </p>
+            )}
+          </div> */}
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 pr-10"
+              {...register("password", {
+                required: "Password is required",
+                minLength: { value: 6, message: "Minimum 6 characters" },
+              })}
+            />
+            <div
+              className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-600"
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </div>
             {errors.password && (
               <p className="text-sm text-red-600 mt-1">
                 {errors.password.message}

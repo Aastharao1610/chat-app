@@ -1,5 +1,5 @@
 "use client";
-import ChatRequestList from "../../components/chatrequestList/ChatrequestList";
+import ChatRequestList from "@/components/chatrequestList/ChatrequestList";
 
 const RequestPage = () => {
   return (

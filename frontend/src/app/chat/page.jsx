@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 
 const ChatPage = () => {
   const [showModal, setShowModal] = useState(false);
+  const [messages, setMessages] = useState([]);
+
   const [selectedUser, setSelectedUser] = useState({
     id: 2,
     name: "Jane Doe",
@@ -19,7 +21,6 @@ const ChatPage = () => {
 
   return (
     <div className="flex h-[calc(100vh-80px)]">
-      <Sidebar />
       <div className="flex flex-col flex-1 bg-gray-50 dark:bg-background">
         <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
           <h2 className="text-2xl font-bold">Chats</h2>
@@ -27,7 +28,7 @@ const ChatPage = () => {
         </div>
 
         <ChatHeader />
-        <ChatMessages />
+        <ChatMessages messages={messages} />
         <ChatInput
           currentUser={currentUser}
           selectedUser={selectedUser}
