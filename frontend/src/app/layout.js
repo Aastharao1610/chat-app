@@ -17,7 +17,7 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <ToastContainer />
         <LayoutWrapper>
-          <main className="min-h-[calc(100vh-120px)] ">{children}</main>
+          <main className="">{children}</main>
         </LayoutWrapper>
       </body>
     </html>

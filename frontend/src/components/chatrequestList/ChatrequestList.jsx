@@ -1,125 +1,95 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { toast } from "react-toastify";
-import { getSocket } from "@/lib/socket";
+import { useEffect, useState } from "react";
 import axios from "axios";
+import { useSelector } from "react-redux";
+import { Check, CheckCheck } from "lucide-react";
+import { toast } from "react-toastify";
 
-const ChatRequestList = ({ onAccept }) => {
-  const [requests, setRequests] = useState([]);
+const getInitials = (name = "") => {
+  const parts = name.trim().split(" ");
+  return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
+};
+
+const formatTime = (timeStr) => {
+  if (!timeStr) return "";
+  const date = new Date(timeStr);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
+const renderTickIcon = (read) => {
+  return read ? (
+    <CheckCheck size={16} className="text-blue-500" />
+  ) : (
+    <Check size={16} className="text-gray-400" />
+  );
+};
+
+const ChatList = ({ onSelectChat }) => {
+  const [chats, setChats] = useState([]);
+  const { user } = useSelector((state) => state.auth); // current user
 
   useEffect(() => {
-    const fetchRequests = async () => {
+    const fetchChats = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/request/my", {
+        const res = await axios.get("http://localhost:5000/api/chat/my", {
           withCredentials: true,
         });
-        setRequests(res.data.requests);
+        setChats(res.data.chats || []);
       } catch (err) {
-        toast.error("Failed to load chat requests.");
+        toast.error("Failed to load chats");
       }
     };
 
-    fetchRequests();
+    fetchChats();
   }, []);
-
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-
-    const handleNewRequest = (data) => {
-      setRequests((prev) => {
-        const exists = prev.some((req) => req.id === data.id);
-        if (!exists) {
-          toast.info(`📩 New chat request from user ${data.senderId}`);
-          return [...prev, data];
-        }
-        return prev;
-      });
-    };
-
-    socket.on("new-chat-request", handleNewRequest);
-
-    return () => {
-      socket.off("new-chat-request", handleNewRequest);
-    };
-  }, []);
-
-  const handleAccept = async (id) => {
-    try {
-      await axios.post(
-        "http://localhost:5000/api/request/accept-request",
-        {
-          requestId: id,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-
-      toast.success(`Accepted request`);
-      setRequests((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: "accepted" } : r))
-      );
-
-      onAccept?.(id);
-
-      const socket = getSocket();
-      socket?.emit("chat-request-accepted", { requestId: id });
-    } catch (error) {
-      toast.error("Failed to accept request.");
-    }
-  };
-
-  const handleReject = async (id) => {
-    try {
-      await axios.post(
-        "http://localhost:5000/api/request/reject-request",
-        {
-          requestId: id,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-
-      toast.error(`Rejected request`);
-      setRequests((prev) => prev.filter((r) => r.id !== id));
-    } catch (error) {
-      toast.error("Failed to reject request.");
-    }
-  };
 
   return (
-    <div className="space-y-4 min-h-screen py-4">
-      {requests.length === 0 ? (
-        <p className="text-center text-gray-500">No chat requests</p>
+    <div className="h-full overflow-y-auto p-4 space-y-2">
+      <h2 className="text-xl  font-bold mb-6 tracking-wide text-black">
+        Messages
+      </h2>
+
+      {chats.length === 0 ? (
+        <p className="text-center text-gray-400">No chats available</p>
       ) : (
-        requests.map(({ id, senderId, status }) => (
-          <Card key={id} className="p-4 flex items-center justify-between">
-            <span>From user ID: {senderId}</span>
-            {status === "pending" ? (
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => handleAccept(id)}>
-                  Accept
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleReject(id)}
-                >
-                  Reject
-                </Button>
+        chats.map((chat) => {
+          const otherUser =
+            chat.users.find((u) => u.id !== user.id) || chat.users[0];
+
+          const lastMessage = chat.messages?.[chat.messages.length - 1];
+
+          return (
+            <div
+              key={chat.id}
+              onClick={() => onSelectChat(chat)}
+              className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+            >
+              {/* Left: Avatar + Name + Last Message */}
+              <div className="flex items-center gap-3">
+                <div className="bg-gray-300 w-10 h-10 flex items-center justify-center rounded-full text-white font-semibold">
+                  {getInitials(otherUser.name)}
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">{otherUser.name}</p>
+                  <p className="text-sm text-gray-500 truncate">
+                    {lastMessage?.text || "No messages yet"}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <span className="text-green-600 font-medium">Accepted</span>
-            )}
-          </Card>
-        ))
+
+              {/* Right: Time + Ticks */}
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-xs text-gray-400">
+                  {formatTime(lastMessage?.createdAt)}
+                </span>
+                {lastMessage && renderTickIcon(lastMessage.read)}
+              </div>
+            </div>
+          );
+        })
       )}
     </div>
   );
 };
 
-export default ChatRequestList;
+export default ChatList;

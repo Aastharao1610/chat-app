@@ -45,6 +45,8 @@ model RefreshToken {
 
 model Chat {
   id        Int       @id @default(autoincrement())
+  isGroup   Boolean   @default(false)
+  groupName String? // optional for individual chats
   users     User[]    @relation("UserChats")
   messages  Message[]
   createdAt DateTime  @default(now())
@@ -57,6 +59,7 @@ model Message {
   receiverId Int
   chatId     Int?
   createdAt  DateTime @default(now())
+  read       Boolean  @default(false)
 
   sender   User  @relation("SentMessages", fields: [senderId], references: [id])
   receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id])

@@ -1,49 +1,28 @@
 "use client";
-import { useEffect, useState } from "react";
-import { initSocket } from "@/lib/socket";
-import ChatMessages from "@/components/ChatMessage/ChatMessage";
-import ChatInput from "@/components/ChatInput/ChatInput";
+import { useState } from "react";
+import ChatList from "./ChatList";
+import ChatMessages from "../ChatMessage/ChatMessage";
 
-const ChatBox = ({ currentUser, selectedUser, currentChatId }) => {
-  const [messages, setMessages] = useState([]);
-  const socket = initSocket();
-
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const { data } = await axios.get(
-        `http://localhost:5000/api/messages?chatId=${currentChatId}`
-      );
-      setMessages(data.messages);
-    };
-
-    fetchMessages();
-  }, [currentChatId]);
-
-  useEffect(() => {
-    socket.on("receive-message", (msg) => {
-      console.log("New real-time message:", msg);
-      setMessages((prev) => [...prev, msg]);
-    });
-
-    // Optional: clean up when component unmounts
-    return () => socket.off("receive-message");
-  }, []);
-
-  const handleSend = (msg) => {
-    setMessages((prev) => [...prev, msg]); // show own message instantly (optimistic)
-  };
+export default function ChatBox() {
+  const [selectedChat, setSelectedChat] = useState(null);
 
   return (
-    <div className="flex flex-col h-full">
-      <ChatMessages messages={messages} currentUser={currentUser} />
-      <ChatInput
-        currentUser={currentUser}
-        selectedUser={selectedUser}
-        currentChatId={currentChatId}
-        onSend={handleSend}
-      />
+    <div className="flex h-screen">
+      {/* Left Sidebar - Chat List */}
+      <div className="w-[300px]  border-r border-gray-300">
+        <ChatList onSelectChat={setSelectedChat} />
+      </div>
+
+      {/* Right Panel - Messages */}
+      <div className="w-1/3 flex flex-col">
+        {selectedChat ? (
+          <ChatMessages selectedChat={selectedChat} />
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            Select a chat to start messaging
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-export default ChatBox;
+}

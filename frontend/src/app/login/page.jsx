@@ -6,6 +6,9 @@ import VerificationModal from "@/components/modal/verificationModal";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
+import { useDispatch } from "react-redux";
+
+import { login as loginAction } from "@/store/authSlice";
 
 export default function LoginSignup() {
   const [isSignup, setIsSignup] = useState(false);
@@ -14,6 +17,7 @@ export default function LoginSignup() {
   const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
+  const dispatch = useDispatch();
 
   const {
     register,
@@ -53,6 +57,12 @@ export default function LoginSignup() {
         );
 
         if (res.status === 200) {
+          dispatch(
+            loginAction({
+              user: res.data.user,
+              token: res.data.accessToken, // from backend response
+            })
+          );
           toast.success("Login successful!");
           router.push("/chat");
         }

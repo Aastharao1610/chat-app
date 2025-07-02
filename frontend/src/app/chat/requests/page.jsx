@@ -1,13 +1,11 @@
 "use client";
-import ChatRequestList from "@/components/chatrequestList/ChatrequestList";
+import ChatMainLayout from "@/components/layout/chatMainlayout";
+import ChatBox from "@/components/chatbox/chatbox";
 
-const RequestPage = () => {
+export default function RequestsPage() {
   return (
-    <div className="max-w-3xl mx-auto py-6 px-4">
-      <h1 className="text-2xl font-semibold mb-4">Pending Chat Requests</h1>
-      <ChatRequestList />
-    </div>
+    <ChatMainLayout>
+      <ChatBox />
+    </ChatMainLayout>
   );
-};
-
-export default RequestPage;
+}

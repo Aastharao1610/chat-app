@@ -1,50 +1,45 @@
 "use client";
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { initSocket } from "@/lib/socket";
 import axios from "axios";
 
-const ChatInput = ({ currentUser, selectedUser, currentChatId }) => {
-  const socket = initSocket();
-  const [input, setInput] = useState("");
+export default function ChatInput({ chatId, receiverId, onSend }) {
+  const [text, setText] = useState("");
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-
-    if (!currentUser || !selectedUser) {
-      console.warn("Missing user or selected user");
-      return;
-    }
-
-    const messageData = {
-      text: input,
-      senderId: currentUser.id,
-      receiverId: currentUser.id === 3 ? 4 : 3,
-      // chatId: currentChatId,
-    };
-    console.log("senderId:", currentUser?.id, "receiverId:", selectedUser?.id);
+  const sendMessage = async () => {
+    if (!text.trim()) return;
 
     try {
-      await axios.post("http://localhost:5000/api/messages", messageData);
-      socket.emit("send-message", messageData);
-      setInput("");
-    } catch (error) {
-      console.error("Failed to send message:", error);
+      const res = await axios.post(
+        "http://localhost:5000/api/message",
+        { text, receiverId },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      onSend(res.data.message);
+      setText("");
+    } catch (err) {
+      console.error("Send failed:", err);
     }
   };
 
   return (
     <div className="flex gap-2">
-      <Input
-        placeholder="Type a message..."
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSend()}
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="flex-1 border rounded px-4 py-2"
+        placeholder="Type your message..."
       />
-      <Button onClick={handleSend}>Send</Button>
+      <button
+        onClick={sendMessage}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Send
+      </button>
     </div>
   );
-};
-
-export default ChatInput;
+}

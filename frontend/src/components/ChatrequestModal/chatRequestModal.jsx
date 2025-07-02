@@ -32,13 +32,13 @@ const ChatRequestModal = ({ open, onClose }) => {
         }
       );
 
-      console.log("✅ Response received:", response); // This should now print
+      console.log("✅ Response received:", response);
 
       const newRequest = response.data.request;
       console.log("📦 New chat request:", newRequest);
 
       const socket = getSocket();
-      socket?.emit("new-chat-request", newRequest); // ✅ Send full data
+      socket?.emit("new-chat-request", newRequest);
 
       toast.success(`Request sent to ${email}`);
       onClose();

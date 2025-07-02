@@ -1,7 +1,15 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { MessageCircle, UserPlus, Lock, Users, LogOut } from "lucide-react";
+import {
+  MessageCircle,
+  UserPlus,
+  Lock,
+  Users,
+  LogOut,
+  Settings,
+  profile,
+} from "lucide-react";
 import { Button } from "../ui/button";
 import { useDispatch } from "react-redux";
 import axios from "axios";
@@ -19,15 +27,25 @@ const navItems = [
     icon: UserPlus,
     path: "/chat/requests",
   },
+  {
+    label: "Private Chats",
+    icon: Lock,
+    path: "/chat/private",
+  },
+  {
+    label: "Groups",
+    icon: Users,
+    path: "/chat/groups",
+  },
+  {
+    label: "Setting",
+    icon: Settings,
+    path: "/chat/setting",
+  },
   // {
-  //   label: "Private Chats",
-  //   icon: Lock,
-  //   path: "/chat/private",
-  // },
-  // {
-  //   label: "Groups",
-  //   icon: Users,
-  //   path: "/chat/groups",
+  //   label: "Profile",
+  //   icon: profile,
+  //   path: "/chat/profile",
   // },
 ];
 
@@ -55,10 +73,11 @@ const Sidebar = () => {
 
   return (
     <aside className="bg-[#111827] text-white w-72 h-full p-6 border-r hidden md:flex flex-col justify-between">
-      <div className="space-y-3">
-        <h2 className="text-xl font-bold mb-6 tracking-wide text-gray-200">
-          Weave Chat
+      <div className="space-y-3 ">
+        <h2 className="text-xl  font-bold mb-6 tracking-wide text-gray-200">
+          Chat App
         </h2>
+        <div className="pt-4 border-t border-gray-700 px-0"></div>
         {navItems.map(({ label, icon: Icon, path }) => (
           <Button
             key={label}
