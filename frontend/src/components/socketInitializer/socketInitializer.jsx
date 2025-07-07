@@ -49,6 +49,7 @@ const SocketInitializer = () => {
     window.socket = socket;
 
     console.log("🔌 Connected to socket:", user.id);
+    socket.emit("register-user", user.id);
 
     socket.on("receive-message", (message) => {
       dispatch(addMessage(message)); // ✅ update message in Redux

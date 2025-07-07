@@ -7,48 +7,64 @@ export const createGroupChat = async (req, res) => {
     const creatorId = req.user.id;
 
     if (!name || !Array.isArray(userIds) || userIds.length < 1) {
-      return res.status(400).json({ message: "Invalid group data" });
+      return res
+        .status(400)
+        .json({ message: "Group name and members required" });
     }
 
+    // ✅ Check if all selected users have accepted request
+    const acceptedUsers = await prisma.chatRequest.findMany({
+      where: {
+        status: "accepted",
+        OR: [
+          { senderId: creatorId, receiverId: { in: userIds } },
+          { senderId: { in: userIds }, receiverId: creatorId },
+        ],
+      },
+    });
+
+    const acceptedUserIds = new Set();
+    for (const req of acceptedUsers) {
+      acceptedUserIds.add(
+        req.senderId === creatorId ? req.receiverId : req.senderId
+      );
+    }
+
+    const validMembers = userIds.filter((id) => acceptedUserIds.has(id));
+
+    if (validMembers.length !== userIds.length) {
+      return res.status(403).json({
+        message: "Some users haven't accepted your chat request yet.",
+      });
+    }
+
+    // ✅ Create group
     const groupChat = await prisma.chat.create({
       data: {
         isGroup: true,
         groupName: name,
-        users: {
-          connect: [...userIds.map((id) => ({ id })), { id: creatorId }],
-        },
       },
     });
+
+    // ✅ Add members to ChatMember table (mark creator as admin)
+    const membersToAdd = [
+      ...validMembers.map((id) => ({
+        userId: id,
+        chatId: groupChat.id,
+        isAdmin: false,
+      })),
+      {
+        userId: creatorId,
+        chatId: groupChat.id,
+        isAdmin: true,
+      },
+    ];
+
+    await prisma.chatMember.createMany({ data: membersToAdd });
 
     res.status(201).json({ groupChat });
   } catch (err) {
     console.error("Create Group Error:", err);
     res.status(500).json({ message: "Failed to create group" });
-  }
-};
-export const getAllGroupsForUser = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const groups = await prisma.chat.findMany({
-      where: {
-        isGroup: true,
-        users: {
-          some: { id: userId },
-        },
-      },
-      include: {
-        users: true,
-        messages: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
-      },
-    });
-
-    res.status(200).json({ groups });
-  } catch (err) {
-    console.error("Fetch Group Error:", err);
-    res.status(500).json({ message: "Failed to fetch groups" });
   }
 };

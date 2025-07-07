@@ -1,6 +1,7 @@
 import express from "express";
-import { createGroupChat, getAllGroupsForUser } from "./group.controller.js";
+import { createGroupChat } from "./group.controller.js";
 import { verifyToken } from "../../middleware/auth.middleware.js";
+import { getAllGroupsForUser } from "./getallgroup.controller.js";
 
 const router = express.Router();
 
