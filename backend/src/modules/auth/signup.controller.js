@@ -7,6 +7,7 @@ export const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // Check if user already exists in verified users
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ error: "User already exists" });
@@ -16,46 +17,43 @@ export const signup = async (req, res) => {
     const token = uuidv4();
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    const existingPending = await prisma.pendingUser.findUnique({
-      where: { email },
-    });
-
-    if (existingPending) {
-      // Update the token and expiry
-      await prisma.pendingUser.update({
+    // Wrap everything in a transaction
+    await prisma.$transaction(async (tx) => {
+      const existingPending = await tx.pendingUser.findUnique({
         where: { email },
-        data: {
-          name,
-          hashedPassword,
-          token,
-          expiresAt,
-          verified: false,
-        },
       });
-    } else {
-      await prisma.pendingUser.upsert({
-        where: { email },
-        update: {
-          token,
-          hashedPassword,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        },
-        create: {
-          name,
-          email,
-          hashedPassword,
-          token,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        },
-      });
-    }
 
-    // Send verification email
-    await sendEmail({
-      to: email,
-      subject: "Verify your Email",
-      html: `<p>Click the link to verify your email:</p>
-             <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Verify Email</a>`,
+      if (existingPending) {
+        await tx.pendingUser.update({
+          where: { email },
+          data: {
+            name,
+            hashedPassword,
+            token,
+            expiresAt,
+            verified: false,
+          },
+        });
+      } else {
+        await tx.pendingUser.create({
+          data: {
+            name,
+            email,
+            hashedPassword,
+            token,
+            expiresAt,
+            verified: false,
+          },
+        });
+      }
+
+      // Only after DB update, try sending email
+      await sendEmail({
+        to: email,
+        subject: "Verify your Email",
+        html: `<p>Click the link to verify your email:</p>
+               <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Verify Email</a>`,
+      });
     });
 
     res.status(201).json({ message: "Verification email sent" });

@@ -8,6 +8,14 @@ export const getMyRequests = async (req, res, next) => {
         status: "pending",
         receiverId,
       },
+      include: {
+        sender: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 

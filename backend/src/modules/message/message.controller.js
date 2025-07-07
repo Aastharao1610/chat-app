@@ -45,7 +45,14 @@ export const createMessage = async (req, res) => {
     });
 
     // 3. Emit socket event
+    console.log("🔥 Emitting to users:", receiverId, senderId);
+    console.log("📡 Emitting 'receive-message' to:", `user-${receiverId}`);
+    console.log("Message object being sent:", message);
+
     req.io.to(`user-${receiverId}`).emit("receive-message", message);
+    req.io.to(`user-${senderId}`).emit("receive-message", message);
+    req.io.to(`user-${receiverId}`).emit("chat-updated");
+    req.io.to(`user-${senderId}`).emit("chat-updated");
 
     res.status(201).json({ message });
   } catch (err) {
@@ -83,6 +90,23 @@ export const markMessagesAsRead = async (req, res) => {
       },
       data: { read: true },
     });
+
+    // 🔁 Emit socket to sender to update their ticks
+    const messages = await prisma.message.findMany({
+      where: {
+        chatId: parseInt(chatId),
+        receiverId: userId,
+      },
+    });
+
+    const senderId = messages?.[0]?.senderId;
+    if (senderId) {
+      req.io.to(`user-${senderId}`).emit("messages-read", {
+        chatId: parseInt(chatId),
+        readerId: userId,
+      });
+    }
+    console.log("📡 Emitting 'messages-read' to room:", `user-${senderId}`);
 
     res.status(200).json({ success: true, count: updated.count });
   } catch (err) {

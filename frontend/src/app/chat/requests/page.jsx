@@ -1,6 +1,6 @@
 "use client";
-import ChatMainLayout from "@/components/layout/chatMainlayout";
-import ChatBox from "@/components/chatbox/chatbox";
+import ChatMainLayout from "@/components/layout/chatMainLaoyut";
+import ChatBox from "@/components/chatBox/chatBox";
 
 export default function RequestsPage() {
   return (

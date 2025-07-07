@@ -83,7 +83,7 @@ const Sidebar = () => {
             key={label}
             variant="ghost"
             className={cn(
-              "w-full flex items-center justify-start gap-4 text-left text-lg py-3 px-4 rounded-lg hover:bg-gray-800 hover:text-white transition",
+              "w-full flex items-center cursor-pointer justify-start gap-4 text-left text-lg py-3 px-4 rounded-lg hover:bg-gray-800 hover:text-white transition",
               pathname === path && "bg-gray-800 text-white font-semibold"
             )}
             onClick={() => router.push(path)}
