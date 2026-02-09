@@ -8,7 +8,7 @@ import useLoadUser from "@/hooks/useLoader";
 import SocketInitializer from "../socketInitializer/socketInitializer";
 
 const InnerLayout = ({ children }) => {
-  useLoadUser(); // ✅ Now it's inside <Provider>, safe to call
+  useLoadUser(); 
   const path = usePathname();
   const isAuthPage = path === "/login";
 

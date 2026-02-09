@@ -27,9 +27,13 @@ export default function ChatList({ onSelectChat, selectedChat }) {
   const fetchChats = useCallback(async () => {
     console.log("📡 Fetching Chats");
     try {
-      const res = await axios.get("http://localhost:5000/api/chat/my", {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND}/api/chat/my`,
+        {
+          withCredentials: true,
+        },
+      );
+      console.log(res, "res");
       const allChats = res.data.chats || [];
       const counts = {};
       const uniqueChats = [];
@@ -39,13 +43,13 @@ export default function ChatList({ onSelectChat, selectedChat }) {
         if (!other) continue;
 
         const exists = uniqueChats.find(
-          (c) => getOtherUser(c)?.id === other.id
+          (c) => getOtherUser(c)?.id === other.id,
         );
         if (!exists) {
           uniqueChats.push(chat);
 
           const unread = chat.messages?.filter(
-            (msg) => msg.receiverId === user.id && !msg.read
+            (msg) => msg.receiverId === user.id && !msg.read,
           ).length;
 
           if (unread > 0) counts[chat.id] = unread;

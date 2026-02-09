@@ -10,9 +10,12 @@ const useLoadUser = () => {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/auth/me", {
-          withCredentials: true,
-        });
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/me`,
+          {
+            withCredentials: true,
+          },
+        );
 
         if (res.data?.user) {
           dispatch(login({ user: res.data.user, token: null }));

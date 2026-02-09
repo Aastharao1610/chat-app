@@ -12,9 +12,12 @@ const ChatRequestList = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/request/my", {
-          withCredentials: true,
-        });
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND}/api/request/my`,
+          {
+            withCredentials: true,
+          },
+        );
         console.log(res, "res");
         setRequests(res.data.requests || []);
       } catch (err) {
@@ -28,9 +31,9 @@ const ChatRequestList = () => {
   const handleAccept = async (requestId) => {
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/request/accept-request/`,
+        `${process.env.NEXT_PUBLIC_BACKEND}/api/request/accept-request/`,
         { requestId },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       console.log(res, "res");
       toast.success("Request accepted");

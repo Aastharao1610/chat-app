@@ -57,9 +57,9 @@ const Sidebar = () => {
   const handleLogout = async () => {
     try {
       await axios.post(
-        "http://localhost:5000/api/auth/logout",
+        `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/logout`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
       dispatch(logout());
       toast.success("Logged out successfully!", { autoClose: 2000 });
@@ -84,7 +84,7 @@ const Sidebar = () => {
             variant="ghost"
             className={cn(
               "w-full flex items-center cursor-pointer justify-start gap-4 text-left text-lg py-3 px-4 rounded-lg hover:bg-gray-800 hover:text-white transition",
-              pathname === path && "bg-gray-800 text-white font-semibold"
+              pathname === path && "bg-gray-800 text-white font-semibold",
             )}
             onClick={() => router.push(path)}
           >

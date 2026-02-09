@@ -51,7 +51,7 @@ export default function VerificationModal({ isOpen, onClose }) {
               className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
             >
               <Dialog.Title className="text-lg font-bold text-center mb-2">
-                📩 Verify Your Email
+                Verify Your Email
               </Dialog.Title>
               <p className="text-center mb-4 text-gray-700">
                 A verification link has been sent to your email.

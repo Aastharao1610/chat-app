@@ -1,49 +1,89 @@
 "use client";
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import axios from "axios";
 import { useSelector, useDispatch } from "react-redux";
 import ChatInput from "../ChatInput/ChatInput";
 import ChatHeader from "../chat/ChatHeader";
 import { CheckCheck } from "lucide-react";
-import { setMessages, addMessage } from "@/store/chatSlice";
+import { setMessages } from "@/store/chatSlice";
 
 export default function ChatMessages({ selectedChat }) {
-  // const [messages, setMessages] = useState([]);
   const dispatch = useDispatch();
-
-  const messages = useSelector((state) => state.chat.messages);
-
-  // Use `messages` from Redux and they’ll update when socket dispatches `addMessage`
-
   const { user } = useSelector((state) => state.auth);
-  const bottomRef = useRef(null);
+  const allMessages = useSelector((state) => state.chat.messages);
+
   const containerRef = useRef(null);
+  const bottomRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const selectedChatRef = useRef(selectedChat); // ✅ to avoid stale selectedChat
 
-  const socket = typeof window !== "undefined" ? window.socket : null;
-
-  // Keep selectedChatRef updated
-  useEffect(() => {
-    selectedChatRef.current = selectedChat;
-  }, [selectedChat]);
-
+  // Track selected chat globally for real-time filtering
   useEffect(() => {
     if (selectedChat?.id) {
-      bottomRef.current?.scrollIntoView({ behavior: "auto" });
+      window.selectedChatId = selectedChat.id;
     }
-  }, [selectedChat?.id]);
+  }, [selectedChat]);
+
+  // Filter only messages for the current chat
+  const chatMessages = useMemo(() => {
+    if (!selectedChat?.id) return [];
+    return allMessages.filter((msg) => msg.chatId === selectedChat.id);
+  }, [allMessages, selectedChat]);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!selectedChat?.id) return;
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND}/api/message/${selectedChat.id}`,
+          { withCredentials: true },
+        );
+        dispatch(setMessages(res.data.messages || []));
+      } catch (err) {
+        console.error("Error fetching messages:", err);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedChat]);
 
   useEffect(() => {
     if (isAtBottom) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [chatMessages]);
 
   const handleScroll = () => {
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
     setIsAtBottom(scrollHeight - scrollTop - clientHeight < 50);
   };
+
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      const unread = chatMessages.some(
+        (msg) => msg.receiverId === user?.id && !msg.read,
+      );
+
+      if (selectedChat?.id && unread) {
+        try {
+          await axios.patch(
+            `${process.env.NEXT_PUBLIC_BACKEND}/api/message/messages/read/${selectedChat.id}`,
+            {},
+            { withCredentials: true },
+          );
+
+          const updatedMessages = chatMessages.map((msg) =>
+            msg.receiverId === user.id ? { ...msg, read: true } : msg,
+          );
+
+          dispatch(setMessages(updatedMessages));
+        } catch (err) {
+          console.error("Error marking messages as read:", err);
+        }
+      }
+    };
+
+    markMessagesAsRead();
+  }, [chatMessages, selectedChat]);
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -72,109 +112,14 @@ export default function ChatMessages({ selectedChat }) {
 
   const grouped = useMemo(() => {
     const map = {};
-    messages.forEach((msg) => {
+    chatMessages.forEach((msg) => {
       const label = formatDateLabel(msg.createdAt);
       if (!map[label]) map[label] = [];
       map[label].push(msg);
     });
     return map;
-  }, [messages]);
-
-  useEffect(() => {
-    const fetchMessages = async () => {
-      if (!selectedChat?.id) return;
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/api/message/${selectedChat.id}`,
-          { withCredentials: true }
-        );
-        dispatch(setMessages(res.data.messages || []));
-      } catch (err) {
-        console.error("Error fetching messages:", err);
-      }
-    };
-
-    fetchMessages();
-  }, [selectedChat]);
-
-  useEffect(() => {
-    const unread = messages.some(
-      (msg) => msg.receiverId === user?.id && !msg.read
-    );
-
-    const markMessagesAsRead = async () => {
-      try {
-        await axios.patch(
-          `http://localhost:5000/api/message/messages/read/${selectedChat.id}`,
-          {},
-          { withCredentials: true }
-        );
-
-        dispatch(
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.receiverId === user.id ? { ...msg, read: true } : msg
-            )
-          )
-        );
-      } catch (err) {
-        console.error("Error marking messages as read:", err);
-      }
-    };
-
-    if (selectedChat?.id && unread) {
-      markMessagesAsRead();
-    }
-  }, [selectedChat, messages]);
-
-  // const handleNewMessage = useCallback(
-  //   (message) => {
-  //     const chat = selectedChatRef.current;
-
-  //     if (message.chatId === chat?.id) {
-  //       const senderUser = chat?.users?.find((u) => u.id === message.senderId);
-  //       console.log(
-  //         `📩 ${user?.name} received: "${message.text}" from ${
-  //           senderUser?.name || message.senderId
-  //         }`
-  //       );
-  //       setMessages((prev) => [...prev, message]);
-  //     } else {
-  //       console.log(
-  //         `🔕 ${user?.name} ignored message for chatId=${message.chatId}`,
-  //         message.text
-  //       );
-  //     }
-  //   },
-  //   [user]
-  // );
-
-  const handleNewMessage = useCallback(
-    (message) => {
-      const chat = selectedChatRef.current;
-
-      if (message.chatId !== chat?.id) return;
-
-      const alreadyExists = messages.some((m) => m.id === message.id);
-      if (alreadyExists) return;
-
-      dispatch(addMessage(message)); // ✅ correct
-    },
-    [messages, dispatch]
-  );
-
-  useEffect(() => {
-    if (!socket) return;
-
-    console.log("📡 Listening for new messages on socket...");
-    socket.on("receive-message", handleNewMessage);
-
-    return () => {
-      socket.off("receive-message", handleNewMessage);
-    };
-  }, [socket]);
-
-  if (!selectedChat || !selectedChat.users) {
+  }, [chatMessages]);
+  if (!user || !selectedChat || !selectedChat.users) {
     return (
       <div className="flex justify-center items-center h-full text-gray-400">
         Select a chat to start messaging
@@ -182,14 +127,15 @@ export default function ChatMessages({ selectedChat }) {
     );
   }
 
-  const otherUser = selectedChat.users.find((u) => u.id !== user?.id);
+  const otherUser = selectedChat?.users?.find((u) => u.id !== user?.id);
+
   const receiverId = otherUser?.id;
-  const addNewMessage = (msg) => dispatch(addMessage(msg));
+
   return (
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="flex flex-col h-full w-[947px]"
+      className="flex flex-col h-full"
     >
       <ChatHeader selectedUser={otherUser} />
 
@@ -251,7 +197,6 @@ export default function ChatMessages({ selectedChat }) {
           <ChatInput
             chatId={selectedChat.id}
             receiverId={receiverId}
-            onSend={addNewMessage}
             receiverUser={otherUser}
           />
         ) : (

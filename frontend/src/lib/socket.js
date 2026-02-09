@@ -4,9 +4,9 @@ let socket;
 
 export const initSocket = (userId) => {
   if (!socket && typeof userId !== "undefined" && userId !== null) {
-    console.log("Connecting to socket server on port 4001 ✅");
+    console.log("Connecting to socket server on port 4001 ");
 
-    socket = io("http://localhost:4001", {
+    socket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}`, {
       withCredentials: true,
       query: { userId },
     });

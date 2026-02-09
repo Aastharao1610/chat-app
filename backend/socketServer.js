@@ -1,81 +1,46 @@
-// socketServer.js
-import { Server } from "socket.io";
-import http from "http";
-import cors from "cors";
 import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 
-// Standalone Express instance (not your main app.js)
 const app = express();
 const server = http.createServer(app);
-const onlineUsers = new Map();
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000", // frontend
+    origin: ["http://localhost:3000", "http://192.168.1.88:3000"],
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
+app.use(express.json());
+
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
-  if (userId) {
-    socket.join(`user-${userId}`);
-    console.log("✅ User joined room:", `user-${userId}`);
-  }
-  onlineUsers.set(userId, socket.id);
-  console.log("✅ Socket connected:", socket.id);
-
-  socket.broadcast.emit("user-online", userId);
-
-  socket.on("typing", ({ to }) => {
-    socket.to(onlineUsers.get(to)).emit("typing", { from: userId });
-  });
-  socket.on("stop-typing", ({ to }) => {
-    socket.to(onlineUsers.get(to)).emit("stop-typing", { from: userId });
-  });
-  // Handle 1-to-1 or group message broadcast
-  socket.on("send-message", (data) => {
-    console.log("📩 Message via socket:", data);
-
-    if (data.isGroup) {
-      // Emit to group room only
-      io.to(`group-${data.chatId}`).emit("receive-message", data);
-    } else {
-      // Emit to receiver only for personal message
-      io.to(`user-${data.receiverId}`).emit("receive-message", data);
-    }
-  });
-
-  // Join group rooms
-  socket.on("join-groups", (groupIds) => {
-    groupIds.forEach((id) => {
-      socket.join(`group-${id}`);
-    });
-  });
-  socket.on("messages-read", ({ chatId, readerId }) => {
-    console.log("📨 Received messages-read:", { chatId, readerId });
-    socket.broadcast.emit("messages-read", { chatId, readerId });
-    console.log("message read ", chatId, readerId);
-  });
-
-  socket.on("join-user", (userId) => {
-    socket.join(`user-${userId}`);
-    console.log(
-      "🧠 join-user: socket",
-      socket.id,
-      "joined user room:",
-      `user-${userId}`
-    );
-  });
+  console.log("✅ Connected:", userId, socket.id);
+  socket.join(`user-${userId}`);
 
   socket.on("disconnect", () => {
-    console.log(" Socket disconnected:", socket.id);
+    console.log("❌ Disconnected:", userId, socket.id);
   });
 });
 
-// Attach io to the express app for backend access (if needed)
-app.set("io", io);
+// Custom HTTP endpoint to trigger socket emits
+app.post("/emit-message", (req, res) => {
+  const { senderId, receiverId, message } = req.body;
+  io.to(`user-${receiverId}`).emit("receive-message", message);
+  io.to(`user-${senderId}`).emit("receive-message", message);
+  return res.status(200).json({ success: true });
+});
+
+app.post("/messages-read", (req, res) => {
+  const { chatId, readerId, senderId } = req.body;
+  io.to(`user-${senderId}`).emit("messages-read", { chatId, readerId });
+  return res.status(200).json({ success: true });
+});
+// socket.on("typing", ({ receiverId }) => {
+//   io.to(`user-${receiverId}`).emit("user-typing", { senderId: userId });
+// });
 
 server.listen(4001, () => {
-  console.log("🎧 Socket.IO server running on http://localhost:4001");
+  console.log("📡 Socket server running on http://localhost:4001");
 });

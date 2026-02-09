@@ -28,10 +28,11 @@ model User {
 
   sentMessages     Message[]      @relation("SentMessages")
   receivedMessages Message[]      @relation("ReceivedMessages")
+  chats            Chat[]         @relation("UserChats")
   RefreshToken     RefreshToken[]
-  sentRequests     ChatRequest[]  @relation("SentRequests")
-  receivedRequests ChatRequest[]  @relation("ReceivedRequests")
-  chatMemberships  ChatMember[] // ✅ clean ChatMember relation
+
+  sentRequests     ChatRequest[] @relation("SentRequests")
+  receivedRequests ChatRequest[] @relation("ReceivedRequests")
 }
 
 model RefreshToken {
@@ -43,25 +44,13 @@ model RefreshToken {
 }
 
 model Chat {
-  id        Int      @id @default(autoincrement())
-  isGroup   Boolean  @default(false)
-  groupName String?
-  createdAt DateTime @default(now())
-
-  messages Message[]
-  members  ChatMember[] // ✅ proper member linkage
-}
-
-model ChatMember {
-  id      Int     @id @default(autoincrement())
-  userId  Int
-  chatId  Int
-  isAdmin Boolean @default(false)
-
-  user User @relation(fields: [userId], references: [id])
-  chat Chat @relation(fields: [chatId], references: [id])
-
-  @@unique([userId, chatId])
+  id        Int       @id @default(autoincrement())
+  isGroup   Boolean   @default(false)
+  groupName String? // optional for individual chats
+  users     User[]    @relation("UserChats")
+  messages  Message[]
+  createdAt DateTime  @default(now())
+ updatedAt  DateTime  @updatedAt @default(now())
 }
 
 model Message {

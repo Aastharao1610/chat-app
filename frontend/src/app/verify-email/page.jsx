@@ -17,20 +17,32 @@ export default function VerifyEmailPage() {
       setMessage("Missing verification token.");
       return;
     }
+    console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND);
 
     const verifyEmail = async () => {
       try {
-        await axios.get(
-          `http://localhost:5000/api/auth/verify-email?token=${token}`
+        // await axios.get(
+        //   `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/verify-email?token=${token}`,
+        // );
+        // setStatus("success");
+        // setMessage("✅ Email verified successfully! You can now log in.");
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/verify-email?token=${token}`,
         );
-        setStatus("success");
-        setMessage("✅ Email verified successfully! You can now log in.");
+        console.log(res, "response of email");
+        if (res.data?.success) {
+          setStatus("success");
+          setMessage("✅ Email verified successfully! You can now log in.");
+        } else {
+          setStatus("error");
+          setMessage(res.data?.error || "❌ Verification failed.");
+        }
       } catch (err) {
         console.error("Verification error:", err);
         setStatus("error");
         setMessage(
           err.response?.data?.error ||
-            "❌ Verification failed or token expired."
+            "❌ Verification failed or token expired.",
         );
       }
     };

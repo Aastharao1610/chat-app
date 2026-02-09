@@ -1,6 +1,7 @@
-import prisma from "../../config/db.js";
+import axios from "axios";
+import prisma from "../../config/db.js"; 
 
-// ✅ Send Message
+
 export const createMessage = async (req, res) => {
   try {
     const { text, receiverId } = req.body;
@@ -10,7 +11,7 @@ export const createMessage = async (req, res) => {
       return res.status(400).json({ message: "Missing fields" });
     }
 
-    // 1. Find or Create Chat between sender and receiver
+    // Find or create chat
     let chat = await prisma.chat.findFirst({
       where: {
         isGroup: false,
@@ -34,7 +35,7 @@ export const createMessage = async (req, res) => {
       });
     }
 
-    // 2. Save message
+    // Create message
     const message = await prisma.message.create({
       data: {
         text,
@@ -43,25 +44,27 @@ export const createMessage = async (req, res) => {
         chatId: chat.id,
       },
     });
-
-    // 3. Emit socket event
-    console.log("🔥 Emitting to users:", receiverId, senderId);
-    console.log("📡 Emitting 'receive-message' to:", `user-${receiverId}`);
-    console.log("Message object being sent:", message);
-
-    req.io.to(`user-${receiverId}`).emit("receive-message", message);
-    req.io.to(`user-${senderId}`).emit("receive-message", message);
-    req.io.to(`user-${receiverId}`).emit("chat-updated");
-    req.io.to(`user-${senderId}`).emit("chat-updated");
+await prisma.chat.update({
+  where: { id: chat.id },
+  data: {
+    updatedAt: new Date(),
+  },
+});
+   
+    await axios.post("http://localhost:4001/emit-message", {
+      receiverId,
+      senderId,
+      message,
+    });
 
     res.status(201).json({ message });
   } catch (err) {
-    console.error("Message Save Error:", err);
+    console.error("Message creation error:", err);
     res.status(500).json({ message: "Failed to save message" });
   }
 };
 
-// ✅ Get Messages by Chat ID
+
 export const getMessagesByChatId = async (req, res) => {
   const { chatId } = req.params;
 
@@ -77,6 +80,8 @@ export const getMessagesByChatId = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch messages" });
   }
 };
+
+// ✅ Mark Messages as Read
 export const markMessagesAsRead = async (req, res) => {
   const { chatId } = req.params;
   const userId = req.user.id;
@@ -91,7 +96,7 @@ export const markMessagesAsRead = async (req, res) => {
       data: { read: true },
     });
 
-    // 🔁 Emit socket to sender to update their ticks
+    // Find sender to notify
     const messages = await prisma.message.findMany({
       where: {
         chatId: parseInt(chatId),
@@ -101,12 +106,13 @@ export const markMessagesAsRead = async (req, res) => {
 
     const senderId = messages?.[0]?.senderId;
     if (senderId) {
-      req.io.to(`user-${senderId}`).emit("messages-read", {
+      
+      await axios.post("http://localhost:4001/messages-read", {
         chatId: parseInt(chatId),
         readerId: userId,
+        senderId,
       });
     }
-    console.log("📡 Emitting 'messages-read' to room:", `user-${senderId}`);
 
     res.status(200).json({ success: true, count: updated.count });
   } catch (err) {

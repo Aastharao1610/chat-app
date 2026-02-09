@@ -35,8 +35,10 @@ export default function LoginSignup() {
 
       if (isSignup) {
         const res = await axios.post(
-          "http://localhost:5000/api/auth/signup",
-          data
+          // `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/signup`,
+          `http://192.168.1.88:5000/api/auth/signup`,
+
+          data,
         );
 
         if (res.data?.message === "User already exists") {
@@ -48,20 +50,31 @@ export default function LoginSignup() {
         }
       } else {
         const res = await axios.post(
-          "http://localhost:5000/api/auth/login",
+          // `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`,
+          `http://192.168.1.88:5000/api/auth/login`,
           {
             email: data.email,
             password: data.password,
           },
-          { withCredentials: true }
+          { withCredentials: true },
         );
+
+        //         const res = await axios.post(
+        //   `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`,
+        //   {
+        //     email: data.email,
+        //     password: data.password,
+        //   },
+        //   { withCredentials: true }
+        // );
+        console.log(res);
 
         if (res.status === 200) {
           dispatch(
             loginAction({
               user: res.data.user,
               token: res.data.accessToken, // from backend response
-            })
+            }),
           );
           toast.success("Login successful!");
           router.push("/chat");
@@ -212,8 +225,8 @@ export default function LoginSignup() {
                 ? "Signing up..."
                 : "Logging in..."
               : isSignup
-              ? "Signup"
-              : "Login"}
+                ? "Signup"
+                : "Login"}
           </button>
         </form>
       </div>
