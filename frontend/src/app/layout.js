@@ -14,10 +14,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-neutral-950 text-whitee`}>
         <ToastContainer />
         <LayoutWrapper>
-          <main className="">{children}</main>
+          <main className="h-screen overflow-hidden">{children}</main>
         </LayoutWrapper>
       </body>
     </html>

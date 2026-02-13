@@ -5,7 +5,10 @@ import jwt from "jsonwebtoken";
 
 export const login = async (req, res) => {
   try {
+    console.log("Login route hit");
+
     const { email, password } = req.body;
+    console.log("Body:", req.body);
 
     if (!email || !password) {
       return res
@@ -33,7 +36,7 @@ export const login = async (req, res) => {
     // 3. Verify password
     const isPasswordValid = await bcrypt.compare(
       password,
-      existingUser.password
+      existingUser.password,
     );
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Incorrect password" });
@@ -43,20 +46,20 @@ export const login = async (req, res) => {
     const accessToken = jwt.sign(
       { userId: existingUser.id },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: process.env.JWT_EXPIRES_IN },
     );
 
     const refreshToken = jwt.sign(
       { userId: existingUser.id },
       process.env.REFRESH_SECRET,
-      { expiresIn: process.env.REFRESH_SECRET_EXPIRES }
+      { expiresIn: process.env.REFRESH_SECRET_EXPIRES },
     );
 
     await prisma.refreshToken.create({
       data: {
         token: refreshToken,
         userId: existingUser.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 70 * 240 * 60 * 60 * 1000),
       },
     });
 

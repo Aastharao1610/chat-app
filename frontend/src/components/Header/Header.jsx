@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { logout } from "@/store/authSlice";
 import { fetchUser } from "@/lib/fetchUser";
-import ThemeToggle from "../themetoggle/ThemeToggle";
 
 const Header = () => {
   const dispatch = useDispatch();
@@ -38,7 +37,7 @@ const Header = () => {
       await axios.post(
         "http://localhost:5000/api/auth/logout",
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       dispatch(logout());

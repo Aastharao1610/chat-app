@@ -1,48 +1,9 @@
-// import { createSlice } from "@reduxjs/toolkit";
-
-// const initialState = {
-//   messages: [],
-//   chats: [], // for ChatList
-// };
-
-// const chatSlice = createSlice({
-//   name: "chat",
-//   initialState,
-//   reducers: {
-//     setMessages: (state, action) => {
-//       state.messages = action.payload;
-//     },
-//     addMessage: (state, action) => {
-//       state.messages.push(action.payload);
-//     },
-//     clearMessages: (state) => {
-//       state.messages = [];
-//     },
-//     setChats: (state, action) => {
-//       state.chats = action.payload;
-//     },
-//     updateChat: (state, action) => {
-//       const updatedChat = action.payload;
-//       const index = state.chats.findIndex((c) => c.id === updatedChat.id);
-//       if (index !== -1) {
-//         state.chats[index] = updatedChat;
-//       } else {
-//         state.chats.unshift(updatedChat); // new chat
-//       }
-//     },
-//   },
-// });
-
-// export const { setMessages, addMessage, clearMessages, setChats, updateChat } =
-//   chatSlice.actions;
-
-// export default chatSlice.reducer;
-
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   messages: [],
   chats: [],
+  onlineUsers: [],
 };
 
 const chatSlice = createSlice({
@@ -50,14 +11,28 @@ const chatSlice = createSlice({
   initialState,
   reducers: {
     setMessages: (state, action) => {
-      if (typeof action.payload === "function") {
-        state.messages = action.payload(state.messages);
-      } else {
-        state.messages = action.payload;
-      }
+      // Logic: Use this only when loading a chat for the first time
+      state.messages = action.payload;
     },
     addMessage: (state, action) => {
-      state.messages.push(action.payload);
+      // Logic: Check if message already exists (prevent duplicates from socket + local)
+      const exists = state.messages.find((m) => m.id === action.payload.id);
+      if (!exists) {
+        state.messages.push(action.payload);
+      }
+    },
+    setOnlineUsers: (state, action) => {
+      // Logic: Update the "green dot" status for everyone instantly
+      state.onlineUsers = action.payload;
+    },
+    // Added: Real-time read status update
+    markAsRead: (state, action) => {
+      const { chatId, readerId } = action.payload;
+      state.messages = state.messages.map((msg) =>
+        msg.chatId === chatId && msg.receiverId === readerId
+          ? { ...msg, read: true }
+          : msg,
+      );
     },
     clearMessages: (state) => {
       state.messages = [];
@@ -77,7 +52,14 @@ const chatSlice = createSlice({
   },
 });
 
-export const { setMessages, addMessage, clearMessages, setChats, updateChat } =
-  chatSlice.actions;
+export const {
+  setMessages,
+  addMessage,
+  clearMessages,
+  setChats,
+  updateChat,
+  setOnlineUsers,
+  markAsRead,
+} = chatSlice.actions;
 
 export default chatSlice.reducer;

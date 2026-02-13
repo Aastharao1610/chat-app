@@ -9,14 +9,19 @@ import { useCallback } from "react";
 import { setChats } from "@/store/chatSlice";
 
 export default function ChatList({ onSelectChat, selectedChat }) {
-  const dispatch = useDispatch();
-  const chats = useSelector((state) => state.chat.chats);
-
-  // Show latest chat list and re-render when socket updates it
-
-  const [unreadCounts, setUnreadCounts] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const chats = useSelector((state) => state.chat.chats);
+  const allMessages = useSelector((state) => state.chat.messages);
+
+  //  Real time chat update
+  const getUnreadCount = (chatId) => {
+    return allMessages.filter(
+      (msg) => msg.chatId === chatId && msg.receiverId === user.id && !msg.read,
+    ).length;
+  };
 
   const getOtherUser = (chat) => {
     if (!chat?.users || !Array.isArray(chat.users)) return null;
@@ -24,8 +29,10 @@ export default function ChatList({ onSelectChat, selectedChat }) {
     return chat.users.find((u) => u?.id && u.id !== user.id);
   };
 
+  // fetching the chats
+
   const fetchChats = useCallback(async () => {
-    console.log("📡 Fetching Chats");
+    console.log("Fetching Chats");
     try {
       const res = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND}/api/chat/my`,
@@ -58,7 +65,7 @@ export default function ChatList({ onSelectChat, selectedChat }) {
       console.log("📬 ChatList updated:", new Date().toLocaleTimeString());
       console.log("🔥 Full fetched chat list:", allChats);
       dispatch(setChats(uniqueChats));
-      setUnreadCounts(counts);
+      // setUnreadCounts(counts);
 
       console.log("👀 Updated uniqueChats:", uniqueChats);
       console.log("📊 Updated unread counts:", counts);
@@ -67,54 +74,32 @@ export default function ChatList({ onSelectChat, selectedChat }) {
     }
   }, [user?.id]);
 
+  // Initial Load
   useEffect(() => {
     if (user?.id) {
       fetchChats();
     }
   }, [user?.id]);
-  const handleRefresh = useCallback(() => {
-    console.log("📥 Socket event triggered → refreshing ChatList");
-    fetchChats();
-  }, [fetchChats]);
 
   useEffect(() => {
     const socket = window.socket;
+    if (!socket || !user?.id) return;
 
-    if (!socket || !socket.connected || !user?.id) {
-      console.warn("🚫 Socket not connected yet");
-      return;
-    }
+    const handleRefresh = () => fetchChats();
 
-    console.log("✅ Socket is connected, attaching listeners");
+    socket.on("receive-message", handleRefresh);
 
-    const onReceiveMessage = (msg) => {
-      console.log("🔥 receive-message received:", msg);
-      handleRefresh();
-    };
-
-    socket.off("receive-message", onReceiveMessage); // always clean old
-    socket.on("receive-message", onReceiveMessage);
+    socket.on("messages-read", handleRefresh);
 
     return () => {
-      console.log("🧹 Cleaning up receive-message listener");
-      socket.off("receive-message", onReceiveMessage);
+      socket.off("receive-message", handleRefresh);
+      socket.off("message-read", handleRefresh);
     };
-  }, [user?.id, handleRefresh]);
-
-  useEffect(() => {
-    if (selectedChat?.id && unreadCounts[selectedChat.id]) {
-      setUnreadCounts((prev) => {
-        const updated = { ...prev };
-        delete updated[selectedChat.id];
-        return updated;
-      });
-    }
-  }, [selectedChat]);
-
+  }, [user?.id, fetchChats]);
   return (
     <div className="p-4 w-full">
-      <div className="flex justify-between">
-        <h2 className="text-xl font-bold mb-4 text-blue-600">Messages</h2>
+      <div className="flex justify-between mb-4">
+        <h2 className="text-xl font-bold  text-blue-600">Messages</h2>
         <button onClick={() => setIsModalOpen(true)}>
           <UserRoundPlus
             size={22}
@@ -134,7 +119,7 @@ export default function ChatList({ onSelectChat, selectedChat }) {
 
           const lastMessage = chat.messages?.[0];
 
-          const unreadCount = unreadCounts[chat.id] || 0;
+          const unreadCount = getUnreadCount(chat.id);
 
           return (
             <div

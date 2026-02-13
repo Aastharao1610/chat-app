@@ -50,8 +50,8 @@ export default function LoginSignup() {
         }
       } else {
         const res = await axios.post(
-          // `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`,
-          `http://192.168.1.88:5000/api/auth/login`,
+          `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`,
+          // `http://192.168.1.88:5000/api/auth/login`,
           {
             email: data.email,
             password: data.password,
@@ -59,14 +59,6 @@ export default function LoginSignup() {
           { withCredentials: true },
         );
 
-        //         const res = await axios.post(
-        //   `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`,
-        //   {
-        //     email: data.email,
-        //     password: data.password,
-        //   },
-        //   { withCredentials: true }
-        // );
         console.log(res);
 
         if (res.status === 200) {

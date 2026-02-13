@@ -6,8 +6,10 @@ import ChatInput from "../ChatInput/ChatInput";
 import ChatHeader from "../chat/ChatHeader";
 import { CheckCheck } from "lucide-react";
 import { setMessages } from "@/store/chatSlice";
+import { Phone } from "lucide-react";
+import { getMicroPhone } from "@/webrtc/audio";
 
-export default function ChatMessages({ selectedChat }) {
+export default function ChatMessages({ selectedChat, onBack }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const allMessages = useSelector((state) => state.chat.messages);
@@ -57,34 +59,6 @@ export default function ChatMessages({ selectedChat }) {
     setIsAtBottom(scrollHeight - scrollTop - clientHeight < 50);
   };
 
-  useEffect(() => {
-    const markMessagesAsRead = async () => {
-      const unread = chatMessages.some(
-        (msg) => msg.receiverId === user?.id && !msg.read,
-      );
-
-      if (selectedChat?.id && unread) {
-        try {
-          await axios.patch(
-            `${process.env.NEXT_PUBLIC_BACKEND}/api/message/messages/read/${selectedChat.id}`,
-            {},
-            { withCredentials: true },
-          );
-
-          const updatedMessages = chatMessages.map((msg) =>
-            msg.receiverId === user.id ? { ...msg, read: true } : msg,
-          );
-
-          dispatch(setMessages(updatedMessages));
-        } catch (err) {
-          console.error("Error marking messages as read:", err);
-        }
-      }
-    };
-
-    markMessagesAsRead();
-  }, [chatMessages, selectedChat]);
-
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     const hours = date.getHours();
@@ -130,6 +104,41 @@ export default function ChatMessages({ selectedChat }) {
   const otherUser = selectedChat?.users?.find((u) => u.id !== user?.id);
 
   const receiverId = otherUser?.id;
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      //checking if there is any unread message
+      const unread = chatMessages.some(
+        (msg) => msg.receiverId === user?.id && !msg.read,
+      );
+
+      if (selectedChat?.id && unread) {
+        try {
+          await axios.patch(
+            `${process.env.NEXT_PUBLIC_BACKEND}/api/message/messages/read/${selectedChat.id}`,
+            {},
+            { withCredentials: true },
+          );
+          // update redux state
+          const updatedMessages = chatMessages.map((msg) =>
+            msg.receiverId === user.id ? { ...msg, read: true } : msg,
+          );
+
+          dispatch(setMessages(updatedMessages));
+          if (window.socket) {
+            window.socket.emit("mark-read", {
+              chatId: selectedChat.id,
+              readerId: user.id,
+              senderId: otherUser.id,
+            });
+          }
+        } catch (err) {
+          console.error("Error marking messages as read:", err);
+        }
+      }
+    };
+
+    markMessagesAsRead();
+  }, [chatMessages, selectedChat, user.id, otherUser?.id]);
 
   return (
     <div
@@ -137,7 +146,7 @@ export default function ChatMessages({ selectedChat }) {
       onScroll={handleScroll}
       className="flex flex-col h-full"
     >
-      <ChatHeader selectedUser={otherUser} />
+      <ChatHeader selectedUser={otherUser} onBack={onBack} />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col">

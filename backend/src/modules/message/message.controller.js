@@ -1,6 +1,5 @@
 import axios from "axios";
-import prisma from "../../config/db.js"; 
-
+import prisma from "../../config/db.js";
 
 export const createMessage = async (req, res) => {
   try {
@@ -44,18 +43,20 @@ export const createMessage = async (req, res) => {
         chatId: chat.id,
       },
     });
-await prisma.chat.update({
-  where: { id: chat.id },
-  data: {
-    updatedAt: new Date(),
-  },
-});
-   
+    await prisma.chat.update({
+      where: { id: chat.id },
+      data: {
+        updatedAt: new Date(),
+      },
+    });
+
     await axios.post("http://localhost:4001/emit-message", {
       receiverId,
       senderId,
       message,
     });
+    // io.to(`user-${receiverId}`).emit("receive-message", message);
+    // io.to(`user-${senderId}`).emit("receive-message", message);
 
     res.status(201).json({ message });
   } catch (err) {
@@ -63,7 +64,6 @@ await prisma.chat.update({
     res.status(500).json({ message: "Failed to save message" });
   }
 };
-
 
 export const getMessagesByChatId = async (req, res) => {
   const { chatId } = req.params;
@@ -106,12 +106,15 @@ export const markMessagesAsRead = async (req, res) => {
 
     const senderId = messages?.[0]?.senderId;
     if (senderId) {
-      
       await axios.post("http://localhost:4001/messages-read", {
         chatId: parseInt(chatId),
         readerId: userId,
         senderId,
       });
+      // io.to(`user-${senderId}`).emit("messages-read", {
+      //   chatId: parseInt(chatId),
+      //   readerId: userId,
+      // });
     }
 
     res.status(200).json({ success: true, count: updated.count });

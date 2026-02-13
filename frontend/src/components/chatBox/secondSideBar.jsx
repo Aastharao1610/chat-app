@@ -39,3 +39,46 @@ export default function SecondSidebar({ onSelectChat, selectedChat }) {
     </aside>
   );
 }
+
+// "use client";
+// import { usePathname } from "next/navigation";
+// import ChatList from "../chatList/chatlist";
+// import ChatRequestList from "../chatrequestList/ChatrequestList";
+// import PrivateChatlist from "../privateChatList/privateChatlist"; // Ensure PascalCase
+
+// export default function SecondSidebar({ onSelectChat, selectedChat }) {
+//   const pathname = usePathname();
+
+//   const getHeaderTitle = () => {
+//     if (pathname === "/chat") return "Chats";
+//     if (pathname === "/chat/requests") return "Requests";
+//     if (pathname === "/chat/private") return "Private Chats";
+//     return "Unknown";
+//   };
+
+//   const renderContent = () => {
+//     if (pathname === "/chat")
+//       return (
+//         <ChatList onSelectChat={onSelectChat} selectedChat={selectedChat} />
+//       );
+//     if (pathname === "/chat/requests") return <ChatRequestList />;
+//     if (pathname === "/chat/private") return <PrivateChatlist />;
+//     return <div className="p-4 text-gray-500">No content</div>;
+//   };
+
+//   return (
+//     /* Change: w-full on mobile, w-[350px] on desktop. Removed fixed 300px */
+//     <aside className=" md:w-[350px] lg:w-[400px] h-full border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f2937] flex flex-col">
+//       {/* Header - WhatsApp style has larger padding on mobile */}
+//       <div className="px-5 py-4 md:px-6 md:py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+//         <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-800 dark:text-white">
+//           {getHeaderTitle()}
+//         </h2>
+//         {/* You can add a 'New Chat' icon here for mobile later */}
+//       </div>
+
+//       {/* Scrollable content - Ensure it fits the remaining height */}
+//       <div className="flex-1 overflow-y-auto">{renderContent()}</div>
+//     </aside>
+//   );
+// }
