@@ -5,7 +5,6 @@ import {
   flushIceQuese,
   toggleMute,
 } from "@/webrtc/audio";
-
 import {
   createPeerConnection,
   getMicroPhone,
@@ -24,12 +23,13 @@ export const useAudioCall = (selectedUser) => {
   const dialingAudio = useRef(null);
   const ringtoneAudio = useRef(null);
   const durationRef = useRef(0);
+  const callTimeOutRef = useRef(null);
+  const activeRemoteRef = useRef(null);
 
   const handleToggle = () => {
     const muted = toggleMute();
     setIsMuted(muted);
   };
-
   const playSound = (type) => {
     if (typeof window === "undefined") return;
     if (type === "dialing") {
@@ -40,7 +40,7 @@ export const useAudioCall = (selectedUser) => {
         .catch((e) => console.log("Sound play blocked"));
     } else if (type === "ringtone") {
       ringtoneAudio.current = new Audio("/sounds/ringing.mp3");
-      dialingAudio.current.loop = true;
+      ringtoneAudio.current.loop = true;
       ringtoneAudio.current
         .play()
         .catch((e) => console.log("Sound play blocked"));
@@ -49,10 +49,15 @@ export const useAudioCall = (selectedUser) => {
   const stopSounds = () => {
     if (dialingAudio.current) {
       dialingAudio.current.pause();
+      dialingAudio.current.currentTime = 0;
       dialingAudio.current = null;
     }
+    if (ringtoneAudio.current) {
+      ringtoneAudio.current.pause();
+      ringtoneAudio.current.currentTime = 0;
+      ringtoneAudio.current = null;
+    }
   };
-
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -66,21 +71,36 @@ export const useAudioCall = (selectedUser) => {
     }
     return `${paddedMins}:${paddedSecs}`;
   };
-
   const startCall = async () => {
-    playSound("dialing");
     const socket = window.socket;
     if (!socket || !selectedUser?.id) return;
 
-    setCalling(true);
-    const pc = createPeerConnection(socket, selectedUser.id);
+    activeRemoteRef.current = selectedUser.id;
 
+    //plays the dialing sound when call starts
+    setCalling(true);
+    playSound("dialing");
+
+    callTimeOutRef.current = setTimeout(() => {
+      console.log("Call timeout :No answer");
+      const socket = window.socket;
+      if (socket && activeRemoteRef.current) {
+        socket.emit("call-timeout", { receiverId: activeRemoteRef.current });
+      }
+
+      handleLocalCleanup();
+    }, 30000);
+    // create peer connection  on sender side
+    const pc = createPeerConnection(socket, selectedUser.id);
+    // gets the mic
     await getMicroPhone();
     addLocalTracks();
 
+    // Creates an offer (saying hey i want to call you)
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
+    // sends that offer  through the socket  to the other user
     socket.emit("call-user", {
       receiverId: selectedUser.id,
       offer,
@@ -88,101 +108,127 @@ export const useAudioCall = (selectedUser) => {
 
     console.log("offer sent");
   };
-
-  useEffect(() => {
-    const socket = window.socket;
-    if (!socket) return;
-
-    socket.on("incoming-call", ({ callerId, offer }) => {
-      console.log("Incoming call from:", callerId);
-      setIncomingCall({ callerId, offer });
-      playSound("ringtone");
-    });
-
-    return () => socket.off("incoming-call");
-  }, []);
-
   const acceptCall = async () => {
-    stopSounds();
     const socket = window.socket;
     if (!incomingCall) return;
-
+    // when call is accepted souds stops
+    stopSounds();
     const { callerId, offer } = incomingCall;
-
+    //set up the peer connection on peer side
     const pc = createPeerConnection(socket, callerId);
     console.log("Creating peer connection");
     console.log(pc);
+    // get  microphone of recevier
     await getMicroPhone();
     addLocalTracks();
 
-    await pc.setRemoteDescription(
-      new RTCSessionDescription(incomingCall.offer),
-    );
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
     await flushIceQuese();
-
+    // create an answer for the offer
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
-    socket.emit("answer-call", {
-      callerId: incomingCall.callerId,
-      answer,
-    });
+    // sends that back so that pipe is connected from the both end
+    socket.emit("answer-call", { callerId, answer });
     setIncomingCall(null);
     setActiveCall(true);
 
     console.log("Answer Sent");
   };
+  const rejectCall = async () => {
+    const socket = window.socket;
+    if (incomingCall) {
+      socket.emit("reject-call", { callerId: incomingCall.callerId });
+    }
+    handleLocalCleanup();
+  };
 
+  const endCall = () => {
+    const socket = window.socket;
+    if (!socket) return;
+
+    const targetId = activeRemoteRef.current;
+
+    if (targetId) {
+      console.log("Sending end-call to:", targetId);
+      socket.emit("end-call", { targetId });
+    }
+
+    // Run the local cleanup
+    handleLocalCleanup();
+  };
+  const handleLocalCleanup = () => {
+    if (callTimeOutRef.current) {
+      clearTimeout(callTimeOutRef.current);
+      callTimeOutRef.current = null;
+    }
+    stopSounds();
+    closeCall();
+
+    setCallEndedMessage(`Call Ended • ${formatTime(callduration)}`);
+    setTimeout(() => setCallEndedMessage(""), 3000);
+
+    setActiveCall(false);
+    setCalling(false);
+    setIncomingCall(null);
+    setCallduration(0);
+    setIsMuted(false);
+    activeRemoteRef.current = null;
+  };
   useEffect(() => {
     const socket = window.socket;
     if (!socket) return;
 
-    socket.on("call-answered", async ({ answer }) => {
-      const pc = getPeerConnection();
-      if (!pc) return;
+    socket.on("incoming-call", ({ callerId, offer }) => {
+      if (activeCall) {
+        socket.emit("user-busy", { callerId });
+      }
+      activeRemoteRef.current = callerId;
+      setIncomingCall({ callerId, offer });
+      playSound("ringtone");
+    });
 
-      await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      await flushIceQuese();
+    socket.on("call-answered", async ({ answer }) => {
+      if (callTimeOutRef.current) {
+        clearTimeout(callTimeOutRef.current);
+        callTimeOutRef.current = null;
+      }
+      const pc = getPeerConnection();
+      if (pc) {
+        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        await flushIceQuese();
+      }
       setActiveCall(true);
       setCalling(false);
       stopSounds();
-
-      console.log("🎉 Call fully connected");
     });
-
-    return () => socket.off("call-answered");
-  }, []);
-
-  useEffect(() => {
-    const socket = window.socket;
-    if (!socket) return;
+    socket.on("user-busy", () => {
+      clearTimeout(callTimeOutRef.current);
+      stopSounds();
+      setCalling(false);
+      setCallEndedMessage("User is Busy");
+    });
+    socket.on("call-rejected", () => {
+      console.log("The user reject the call");
+      setCallEndedMessage("call Rejected");
+      handleLocalCleanup();
+    });
+    socket.on("call-ended", () => {
+      console.log("Received call-ended signal from peer");
+      handleLocalCleanup();
+    });
 
     socket.on("ice-candidate", async ({ candidate }) => {
       await addIceCandidateToPeer(candidate);
     });
-
-    return () => socket.off("ice-candidate");
-  }, []);
-
-  useEffect(() => {
-    const socket = window.socket;
-    if (!socket) return;
-
-    socket.on("call-ended", () => {
-      const finalTime = durationRef.current;
-
-      setCallEndedMessage(`Call Ended • ${formatTime(finalTime)}`);
-      console.log(formatTime(finalTime), "call duration");
-
-      closeCall();
-      setActiveCall(false);
-      setCalling(false);
-      setCallduration(0);
-    });
-
-    return () => socket.off("call-ended");
-  }, []);
-
+    return () => {
+      socket.off("incoming-call");
+      socket.off("call-answered");
+      socket.off("call-ended");
+      socket.off("ice-candidate");
+      socket.off("call-rejected");
+    };
+  }, [activeCall, incomingCall]);
   useEffect(() => {
     let interval;
     if (activeCall) {
@@ -202,35 +248,6 @@ export const useAudioCall = (selectedUser) => {
     };
   }, [activeCall]);
 
-  const endCall = () => {
-    const socket = window.socket;
-    if (!socket) return;
-
-    const targetId = activeCall ? selectedUser?.id : incomingCall?.callerId;
-
-    if (targetId) {
-      console.log("Sending end-call to:", targetId);
-      socket.emit("end-call", { targetId });
-    }
-
-    // Run the local cleanup
-    handleLocalCleanup();
-  };
-
-  const handleLocalCleanup = () => {
-    const finalTime = durationRef.current;
-    setCallEndedMessage(`Call Ended • ${formatTime(callduration)}`);
-
-    setTimeout(() => setCallEndedMessage(""), 3000);
-
-    closeCall();
-    setActiveCall(false);
-    setCalling(false);
-    setIncomingCall(null);
-    setCallduration(0);
-    setIsMuted(false);
-    stopSounds();
-  };
   return {
     startCall,
     acceptCall,
@@ -242,5 +259,6 @@ export const useAudioCall = (selectedUser) => {
     callduration: formatTime(callduration),
     isMuted,
     toggleMute: handleToggle,
+    rejectCall,
   };
 };

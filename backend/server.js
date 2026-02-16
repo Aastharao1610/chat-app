@@ -12,7 +12,6 @@ const io = new Server(server, {
   },
 });
 
-// ✅ store io on app so middleware can use it
 app.set("io", io);
 
 io.on("connection", (socket) => {
@@ -31,20 +30,3 @@ io.on("connection", (socket) => {
 server.listen(5000, () => {
   console.log("Server running on http://localhost:5000");
 });
-
-// import http from "http";
-// import app from "./src/app.js";
-// import redisClient from "./src/config/redis.js";
-// import "dotenv/config";
-
-// const server = http.createServer(app);
-
-// (async () => {
-//   await redisClient.set("test", "hello-redis");
-//   const value = await redisClient.get("test");
-//   console.log("Redis test Value", value);
-// })();
-
-// server.listen(5000, () => {
-//   console.log(`🚀 Backend API running on ${process.env.NEXT_PUBLIC_BACKEND}`);
-// });

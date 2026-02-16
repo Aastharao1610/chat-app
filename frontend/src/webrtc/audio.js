@@ -9,9 +9,11 @@ export const createPeerConnection = (socket, targetUserId) => {
   activeSocket = socket;
   activeTarget = targetUserId;
 
+  // iceServer it uses a google "STUN" server ,Its like a mirror that tells our computer  its own public IP address  so the other  person can find it.
   peerConnection = new RTCPeerConnection({
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
   });
+  //this send our "ADDRESS" to the other person via the socket
   peerConnection.onicecandidate = (event) => {
     if (event.candidate && activeSocket) {
       activeSocket.emit("ice-candidate", {
@@ -20,7 +22,7 @@ export const createPeerConnection = (socket, targetUserId) => {
       });
     }
   };
-
+  // when other person's audio arrives , ontrack created an invisible audio player and plays their voice
   peerConnection.ontrack = (event) => {
     console.log("Remote audio recevied");
     const remoteAudio = new Audio();
@@ -30,7 +32,7 @@ export const createPeerConnection = (socket, targetUserId) => {
   return peerConnection;
 };
 
-//get microhpone
+//Asks the user for permission for mic, it returns the stream
 export const getMicroPhone = async () => {
   if (typeof window === "undefined") {
     return null;
@@ -48,7 +50,7 @@ export const getMicroPhone = async () => {
   return localStream;
 };
 
-//add local tracks
+//Take that mic and plugs it into the peer Connection  pipe so other person can hear me
 export const addLocalTracks = () => {
   if (!peerConnection || !localStream) return;
 
@@ -59,6 +61,7 @@ export const addLocalTracks = () => {
 //connecting one peer to another
 export const getPeerConnection = () => peerConnection;
 
+// If the connection is ready, add the neighbor's address immediately. If not, put it in the iceQueue
 export const addIceCandidateToPeer = async (candidate) => {
   if (!peerConnection) return;
   if (peerConnection.remoteDescription) {
@@ -68,7 +71,7 @@ export const addIceCandidateToPeer = async (candidate) => {
     iceQueue.push(candidate);
   }
 };
-
+// once the connection is ready  this empties the waiting room and process all stored address
 export const flushIceQuese = async () => {
   if (!peerConnection) return;
 
@@ -80,6 +83,7 @@ export const flushIceQuese = async () => {
   iceQueue = [];
 };
 
+//function for mute and unmute
 export const toggleMute = () => {
   if (!localStream) return false;
 

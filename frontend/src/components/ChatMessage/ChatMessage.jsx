@@ -10,6 +10,7 @@ import { Phone } from "lucide-react";
 import { getMicroPhone } from "@/webrtc/audio";
 
 export default function ChatMessages({ selectedChat, onBack }) {
+  const [callLogs, setCallLogs] = useState([]);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const allMessages = useSelector((state) => state.chat.messages);
@@ -67,7 +68,24 @@ export default function ChatMessages({ selectedChat, onBack }) {
     const formattedHours = hours % 12 || 12;
     return `${formattedHours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
   };
+  useEffect(() => {
+    const fetchCalls = async () => {
+      if (!selectedChat?.users || !user?.id) return;
+      const otherUser = selectedChat.users.find((u) => u.id !== user.id);
+      if (!otherUser) return;
 
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND}/api/calls/${user.id}/${otherUser.id}`,
+        );
+        console.log(res.data);
+        setCallLogs(res.data || []);
+      } catch (error) {
+        console.error("Error Fetching calls :", error);
+      }
+    };
+    fetchCalls();
+  }, [selectedChat, user?.id]);
   const formatDateLabel = (dateStr) => {
     const date = new Date(dateStr);
     const today = new Date();
@@ -84,15 +102,47 @@ export default function ChatMessages({ selectedChat, onBack }) {
     });
   };
 
+  // const grouped = useMemo(() => {
+  //   const map = {};
+  //   chatMessages.forEach((msg) => {
+  //     const label = formatDateLabel(msg.createdAt);
+  //     if (!map[label]) map[label] = [];
+  //     map[label].push(msg);
+  //   });
+  //   return map;
+  // }, [chatMessages]);
+  const combinedTimeline = useMemo(() => {
+    const formattedMessages = chatMessages.map((msg) => ({
+      id: msg.id,
+      type: "message",
+      createdAt: msg.createdAt,
+      data: msg,
+    }));
+
+    const formattedCalls = callLogs.map((call) => ({
+      id: call.id,
+      type: "call",
+      createdAt: call.createdAt,
+      data: call,
+    }));
+
+    return [...formattedMessages, ...formattedCalls].sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+    );
+  }, [chatMessages, callLogs]);
+
   const grouped = useMemo(() => {
     const map = {};
-    chatMessages.forEach((msg) => {
-      const label = formatDateLabel(msg.createdAt);
+
+    combinedTimeline.forEach((item) => {
+      const label = formatDateLabel(item.createdAt);
       if (!map[label]) map[label] = [];
-      map[label].push(msg);
+      map[label].push(item);
     });
+
     return map;
-  }, [chatMessages]);
+  }, [combinedTimeline]);
+
   if (!user || !selectedChat || !selectedChat.users) {
     return (
       <div className="flex justify-center items-center h-full text-gray-400">
@@ -155,7 +205,7 @@ export default function ChatMessages({ selectedChat, onBack }) {
             <div className="text-center text-xs text-gray-500 mb-2">
               {dateLabel}
             </div>
-            {msgs.map((msg) => {
+            {/* {msgs.map((msg) => {
               const isSender = msg.senderId === user.id;
               return (
                 <div
@@ -195,6 +245,74 @@ export default function ChatMessages({ selectedChat, onBack }) {
                   </div>
                 </div>
               );
+            })} */}
+            {msgs.map((item) => {
+              if (item.type === "message") {
+                const msg = item.data;
+                const isSender = msg.senderId === user.id;
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${isSender ? "justify-end" : "justify-start"} mb-2`}
+                  >
+                    <div className="flex flex-col max-w-[70%]">
+                      {isSender && (
+                        <span className="text-xs text-gray-500 mb-1 ml-1">
+                          {
+                            selectedChat.users.find(
+                              (u) => u.id === msg.senderId,
+                            )?.name
+                          }
+                        </span>
+                      )}
+                      <div
+                        className={`px-4 py-2 rounded-2xl text-sm relative ${
+                          isSender
+                            ? "bg-blue-500 text-white rounded-br-none"
+                            : "bg-white text-black border border-gray-200 rounded-bl-none"
+                        }`}
+                      >
+                        {msg.text}
+                        <div className="flex items-center justify-end text-xs gap-1 text-gray-300 mt-1">
+                          <span>{formatTime(msg.createdAt)}</span>
+                          {isSender &&
+                            (msg.read ? (
+                              <CheckCheck className="w-4 h-4 text-white" />
+                            ) : (
+                              <CheckCheck className="w-4 h-4 text-gray-500" />
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              if (item.type === "call") {
+                const call = item.data;
+                const isOutgoing = call.callerId === user.id;
+
+                return (
+                  <div key={call.id} className="flex justify-center my-3">
+                    <div className="bg-gray-100 px-4 py-2 rounded-xl text-sm text-gray-700 border">
+                      {call.status === "MISSED" && (
+                        <span className="text-red-500">📞 Missed Call</span>
+                      )}
+
+                      {call.status === "COMPLETED" && (
+                        <>
+                          📞 {isOutgoing ? "Outgoing" : "Incoming"} Call •{" "}
+                          {call.duration}s
+                        </>
+                      )}
+
+                      {call.status === "REJECTED" && (
+                        <span>📞 Call Rejected</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
             })}
           </div>
         ))}

@@ -32,7 +32,10 @@ model User {
   RefreshToken     RefreshToken[]
 
   sentRequests     ChatRequest[] @relation("SentRequests")
-  receivedRequests ChatRequest[] @relation("ReceivedRequests")
+  receivedRequests ChatRequest[] @relation("ReceivedRequests") 
+
+  outgoingCalls Call[] @relation("Caller")
+  incomingCalls Call[] @relation("Receiver")
 }
 
 model RefreshToken {
@@ -76,4 +79,31 @@ model ChatRequest {
 
   sender   User @relation("SentRequests", fields: [senderId], references: [id])
   receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id])
+}
+model Call {
+  id          String   @id @default(uuid())
+  callerId    Int
+  receiverId  Int
+
+  caller      User     @relation("Caller", fields: [callerId], references: [id])
+  receiver    User     @relation("Receiver", fields: [receiverId], references: [id])
+
+  status      CallStatus
+  startedAt   DateTime @default(now())
+  answeredAt  DateTime?
+  endedAt     DateTime?
+  duration    Int?     
+  endedBy     String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum CallStatus {
+  RINGING
+  CONNECTED
+  REJECTED
+  MISSED
+  BUSY
+  COMPLETED
 }
