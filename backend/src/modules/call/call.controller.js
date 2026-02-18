@@ -2,7 +2,7 @@ import prisma from "../../config/db.js";
 
 export const getCallsBetweenUsers = async (req, res) => {
   try {
-    const { userId, otherUserId } = req.params;
+    // const { userId, otherUserId } = req.params;
     const user1Id = Number(req.params.userId);
     const user2Id = Number(req.params.otherUserId);
 

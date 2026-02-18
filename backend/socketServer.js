@@ -69,13 +69,14 @@ io.on("connection", (socket) => {
     }
   });
   // --- WebRTC Logic (Keep as is, it's correct) ---
-  socket.on("call-user", async ({ receiverId, offer }) => {
+  socket.on("call-user", async ({ receiverId, offer, type }) => {
     try {
       const newCall = await prisma.call.create({
         data: {
           callerId: parseInt(userId),
           receiverId: parseInt(receiverId),
           status: "RINGING",
+          type: type || "AUDIO",
         },
       });
       activeCalls.set(`${userId}_${receiverId}`, newCall.id);
@@ -83,13 +84,14 @@ io.on("connection", (socket) => {
         callerId: userId,
         offer,
         callId: newCall.id,
+        type,
       });
     } catch (Error) {
       console.error("Error creating call in DB : ", Error);
     }
   });
   // 1. listen for the answers and sned it back to the caller
-  socket.on("answer-call", async ({ callerId, answer }) => {
+  socket.on("answer-call", async ({ callerId, answer, type }) => {
     try {
       const key = callerId + "_" + userId;
       const callId = activeCalls.get(key);
@@ -103,19 +105,19 @@ io.on("connection", (socket) => {
         });
       }
       console.log(`Sending answer from ${userId} to ${callerId}`);
-      io.to(`user-${callerId}`).emit("call-answered", { answer });
+      io.to(`user-${callerId}`).emit("call-answered", { answer, type });
     } catch (error) {
       console.error("Error in sotring detials of answered call");
     }
   });
 
   // 2. Listen for ICE Candidates and send them to the other user
-  socket.on("ice-candidate", ({ targetUserId, candidate }) => {
-    io.to(`user-${targetUserId}`).emit("ice-candidate", { candidate });
+  socket.on("ice-candidate", ({ to, candidate }) => {
+    io.to(`user-${to}`).emit("ice-candidate", { candidate });
   });
 
   // 3. Listen for End Call and notify the other user
-  socket.on("end-call", async ({ targetId }) => {
+  socket.on("end-call", async ({ targetId, type }) => {
     try {
       const key = activeCalls.has(`${userId}_${targetId}`)
         ? `${userId}_${targetId}`
@@ -147,14 +149,14 @@ io.on("connection", (socket) => {
         });
         activeCalls.delete(key);
       }
-      console.log(`Call ended by ${userId} for ${targetId}`);
-      io.to(`user-${targetId}`).emit("call-ended");
+      console.log(`Call ended by ${userId} for ${(targetId, type)}`);
+      io.to(`user-${targetId}`).emit("call-ended", type);
     } catch (error) {
       console.error("Error in storing aansered call details");
     }
   });
   // missed call (call timeout)
-  socket.on("call-timeout", async ({ receiverId }) => {
+  socket.on("call-timeout", async ({ receiverId, type }) => {
     const key = `${userId}_${receiverId}`;
     const callId = activeCalls.get(key);
 
@@ -165,10 +167,10 @@ io.on("connection", (socket) => {
       });
       activeCalls.delete(key);
     }
-    io.to(`user-${receiverId}`).emit("call-ended");
+    io.to(`user-${receiverId}`).emit("call-ended", type);
   });
   // 4. reject
-  socket.on("reject-call", async ({ callerId }) => {
+  socket.on("reject-call", async ({ callerId, type }) => {
     const key = callerId + "_" + userId;
     const callId = activeCalls.get(key);
 
@@ -184,8 +186,8 @@ io.on("connection", (socket) => {
       activeCalls.delete(key);
     }
 
-    io.to(`user-${callerId}`).emit("call-rejected");
-    console.log("call rejected");
+    io.to(`user-${callerId}`).emit("call-rejected", { type });
+    console.log("call rejected by", userId);
   });
 });
 app.post("/emit-message", (req, res) => {

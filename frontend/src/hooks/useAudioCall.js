@@ -104,6 +104,7 @@ export const useAudioCall = (selectedUser) => {
     socket.emit("call-user", {
       receiverId: selectedUser.id,
       offer,
+      type: "AUDIO",
     });
 
     console.log("offer sent");
@@ -129,7 +130,7 @@ export const useAudioCall = (selectedUser) => {
     await pc.setLocalDescription(answer);
 
     // sends that back so that pipe is connected from the both end
-    socket.emit("answer-call", { callerId, answer });
+    socket.emit("answer-call", { callerId, answer, type: "AUDIO" });
     setIncomingCall(null);
     setActiveCall(true);
 
@@ -151,7 +152,7 @@ export const useAudioCall = (selectedUser) => {
 
     if (targetId) {
       console.log("Sending end-call to:", targetId);
-      socket.emit("end-call", { targetId });
+      socket.emit("end-call", { targetId, type: "AUDIO" });
     }
 
     // Run the local cleanup
@@ -179,16 +180,20 @@ export const useAudioCall = (selectedUser) => {
     const socket = window.socket;
     if (!socket) return;
 
-    socket.on("incoming-call", ({ callerId, offer }) => {
+    socket.on("incoming-call", ({ callerId, offer, type }) => {
+      if (type !== "AUDIO") return;
       if (activeCall) {
         socket.emit("user-busy", { callerId });
+        return;
       }
       activeRemoteRef.current = callerId;
       setIncomingCall({ callerId, offer });
       playSound("ringtone");
     });
 
-    socket.on("call-answered", async ({ answer }) => {
+    socket.on("call-answered", async ({ answer, type }) => {
+      if (type !== "AUDIO") return;
+      console.log(type);
       if (callTimeOutRef.current) {
         clearTimeout(callTimeOutRef.current);
         callTimeOutRef.current = null;
@@ -208,11 +213,14 @@ export const useAudioCall = (selectedUser) => {
       setCalling(false);
       setCallEndedMessage("User is Busy");
     });
-    socket.on("call-rejected", () => {
-      console.log("The user reject the call");
-      setCallEndedMessage("call Rejected");
-      handleLocalCleanup();
+    socket.on("call-rejected", ({ type }) => {
+      if (type !== "AUDIO") return;
+
+      console.log("Audio call rejected");
+      setCallEndedMessage("Call Rejected");
+      handleCleanup();
     });
+
     socket.on("call-ended", () => {
       console.log("Received call-ended signal from peer");
       handleLocalCleanup();
@@ -228,7 +236,7 @@ export const useAudioCall = (selectedUser) => {
       socket.off("ice-candidate");
       socket.off("call-rejected");
     };
-  }, [activeCall, incomingCall]);
+  }, []);
   useEffect(() => {
     let interval;
     if (activeCall) {

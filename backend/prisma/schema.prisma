@@ -80,6 +80,11 @@ model ChatRequest {
   sender   User @relation("SentRequests", fields: [senderId], references: [id])
   receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id])
 }
+
+enum CallType {
+  AUDIO
+  VIDEO
+}
 model Call {
   id          String   @id @default(uuid())
   callerId    Int
@@ -94,10 +99,11 @@ model Call {
   endedAt     DateTime?
   duration    Int?     
   endedBy     String?
-
+ type       CallType @default(AUDIO)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
 
 enum CallStatus {
   RINGING
