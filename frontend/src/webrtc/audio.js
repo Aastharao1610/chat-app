@@ -100,7 +100,7 @@ export const toggleMute = () => {
   return !audioTrack.enabled;
 };
 
-//clise the call
+//close the call
 export const closeCall = () => {
   if (peerConnection) {
     peerConnection.close();

@@ -17,6 +17,19 @@ export const createVideoPeerConnection = (socket, remoteSocketId) => {
 
   return peerConnection;
 };
+export const getmicrophone = async () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  if (!navigator?.mediaDevices?.getUserMedia) {
+    throw new Error("getUserMedia not available");
+  }
+  localStream = await navigator.mediaDevices.getUserMedia({
+    audio: true,
+  });
+  console.log(localStream);
+  return localStream;
+};
 
 export const getCameraStream = async () => {
   localStream = await navigator.mediaDevices.getUserMedia({
@@ -45,12 +58,10 @@ export const closeVideoCall = () => {
   }
 };
 
-export const toggleMute = () => {
-  if (!localStream) return false;
+export const toggleMute = (stream) => {
+  if (!stream) return false;
 
-  const audioTrack = localStream
-    .getTracks()
-    .find((track) => track.kind === "audio");
+  const audioTrack = stream.getTracks().find((track) => track.kind === "audio");
 
   if (!audioTrack) return false;
 
@@ -61,12 +72,10 @@ export const toggleMute = () => {
   return !audioTrack.enabled;
 };
 
-export const toggleVideo = () => {
-  if (!localStream) return false;
+export const toggleVideo = (stream) => {
+  if (!stream) return false;
 
-  const videoTrack = localStream
-    .getTracks()
-    .find((track) => track.kind === "video");
+  const videoTrack = stream.getTracks().find((track) => track.kind === "video");
 
   if (!videoTrack) return false;
 

@@ -59,16 +59,69 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", () => {
-    if (userId) {
-      if (onlineUsers.get(userId) === socket.id) {
-        onlineUsers.delete(userId);
+  // socket.on("disconnect", () => {
+  //   if (userId) {
+  //     if (onlineUsers.get(userId) === socket.id) {
+  //       onlineUsers.delete(userId);
+  //     }
+  //     io.emit("get-online-users", Array.from(onlineUsers.keys()));
+  //     console.log(`User ${userId} disconnected`);
+  //   }
+  // });
+
+  socket.on("disconnect", async (reason) => {
+    if (!userId) return;
+
+    console.log(`User ${userId} disconnected due to ${reason}`);
+
+    for (const [key, callId] of activeCalls.entries()) {
+      if (key.startsWith(`${userId}_`) || key.endsWith(`_${userId}`)) {
+        const [callerId, receiverId] = key.split("_");
+        const otherUserId = callerId === userId ? receiverId : callerId;
+
+        try {
+          const call = await prisma.call.findUnique({
+            where: { id: callId },
+          });
+
+          if (!call) continue;
+
+          let finalStatus = "MISSED";
+
+          // If call was already connected
+          if (call.answeredAt) {
+            finalStatus = "COMPLETED";
+          }
+
+          await prisma.call.update({
+            where: { id: callId },
+            data: {
+              status: finalStatus,
+              endedAt: new Date(),
+              endedBy: String(userId),
+            },
+          });
+
+          activeCalls.delete(key);
+
+          io.to(`user-${otherUserId}`).emit("call-ended", {
+            type: call.type,
+            reason: "disconnect",
+          });
+        } catch (error) {
+          console.error("Error updating call on disconnect:", error);
+        }
       }
-      io.emit("get-online-users", Array.from(onlineUsers.keys()));
-      console.log(`User ${userId} disconnected`);
     }
+
+    // Remove from online users
+    if (onlineUsers.get(userId) === socket.id) {
+      onlineUsers.delete(userId);
+    }
+
+    io.emit("get-online-users", Array.from(onlineUsers.keys()));
   });
-  // --- WebRTC Logic (Keep as is, it's correct) ---
+
   socket.on("call-user", async ({ receiverId, offer, type }) => {
     try {
       const newCall = await prisma.call.create({
@@ -150,7 +203,7 @@ io.on("connection", (socket) => {
         activeCalls.delete(key);
       }
       console.log(`Call ended by ${userId} for ${(targetId, type)}`);
-      io.to(`user-${targetId}`).emit("call-ended", type);
+      io.to(`user-${targetId}`).emit("call-ended", { type, reason: "ended" });
     } catch (error) {
       console.error("Error in storing aansered call details");
     }
@@ -167,7 +220,8 @@ io.on("connection", (socket) => {
       });
       activeCalls.delete(key);
     }
-    io.to(`user-${receiverId}`).emit("call-ended", type);
+    console.log(`${type} Call ended due to timeout`);
+    io.to(`user-${receiverId}`).emit("call-ended", { type });
   });
   // 4. reject
   socket.on("reject-call", async ({ callerId, type }) => {
