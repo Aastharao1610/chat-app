@@ -66,16 +66,16 @@ export const login = async (req, res) => {
     // 5. Set cookies
     res.cookie("token", accessToken, {
       httpOnly: true,
-      secure: false, // change this for production!
-      sameSite: "lax",
+      secure: true, // change this for production!
+      sameSite: "none",
       maxAge: 60 * 60 * 1000,
       path: "/",
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true, // change this for production!
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
