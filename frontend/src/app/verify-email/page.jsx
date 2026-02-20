@@ -1,4 +1,52 @@
+// "use client";
+// export const dynamic = "force-dynamic";
+// import { useEffect, useState } from "react";
+// import { useSearchParams } from "next/navigation";
+// import axios from "axios";
+// import { Loader2 } from "lucide-react";
+
+// export default function VerifyEmailPage() {
+//   const searchParams = useSearchParams();
+//   const token = searchParams.get("token");
+
+//   const [status, setStatus] = useState("verifying");
+//   const [message, setMessage] = useState("");
+
+//   useEffect(() => {
+//     if (!token) {
+//       setStatus("error");
+//       setMessage("Missing verification token.");
+//       return;
+//     }
+//     console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND);
+
+//     const verifyEmail = async () => {
+//       try {
+//         const res = await axios.get(
+//           `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/verify-email?token=${token}`,
+//         );
+//         console.log(res, "response of email");
+//         if (res.data?.success) {
+//           setStatus("success");
+//           setMessage("Email verified successfully! You can now log in.");
+//         } else {
+//           setStatus("error");
+//           setMessage(res.data?.error || "Verification failed.");
+//         }
+//       } catch (err) {
+//         console.error("Verification error:", err);
+//         setStatus("error");
+//         setMessage(
+//           err.response?.data?.error || "Verification failed or token expired.",
+//         );
+//       }
+//     };
+
+//     verifyEmail();
+//   }, [token]);
 "use client";
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
@@ -17,14 +65,13 @@ export default function VerifyEmailPage() {
       setMessage("Missing verification token.");
       return;
     }
-    console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND);
 
     const verifyEmail = async () => {
       try {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/verify-email?token=${token}`,
         );
-        console.log(res, "response of email");
+
         if (res.data?.success) {
           setStatus("success");
           setMessage("Email verified successfully! You can now log in.");
@@ -33,7 +80,6 @@ export default function VerifyEmailPage() {
           setMessage(res.data?.error || "Verification failed.");
         }
       } catch (err) {
-        console.error("Verification error:", err);
         setStatus("error");
         setMessage(
           err.response?.data?.error || "Verification failed or token expired.",
