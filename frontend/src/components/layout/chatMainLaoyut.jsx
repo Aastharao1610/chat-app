@@ -1,5 +1,5 @@
 import React from "react";
-import Sidebar from "../SideBar/SideBar";
+import Sidebar from "./SideBar/SideBar";
 
 export default function ChatMainLayout({ children }) {
   return (

@@ -1,8 +1,8 @@
 "use client";
 import { usePathname } from "next/navigation";
-import ChatList from "../chatList/chatlist";
-import ChatRequestList from "../chatrequestList/ChatrequestList";
-import privateChatlist from "../privateChatList/privateChatlist";
+import ChatList from "../chatlist/chatList/chatlist";
+import ChatRequestList from "../chatlist/chatrequestList/ChatrequestList";
+import privateChatlist from "../chatlist/privateChatList/privateChatlist";
 
 export default function SecondSidebar({ onSelectChat, selectedChat }) {
   const pathname = usePathname();

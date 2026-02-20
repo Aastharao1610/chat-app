@@ -8,7 +8,7 @@ import {
   setOnlineUsers,
   markAsRead,
 } from "@/store/chatSlice";
-import { createPeerConnection } from "@/webrtc/audio";
+import { createPeerConnection } from "@/features/calls/webrtc/audio";
 
 const SocketInitializer = () => {
   const dispatch = useDispatch();

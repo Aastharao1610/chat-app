@@ -2,7 +2,7 @@
 
 import { Provider } from "react-redux";
 import { store } from "@/store/store";
-import useLoadUser from "@/hooks/useLoader";
+import useLoadUser from "@/features/hooks/useLoader";
 import SocketInitializer from "../socketInitializer/socketInitializer";
 
 function AppInitializer({ children }) {

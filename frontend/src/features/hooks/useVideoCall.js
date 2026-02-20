@@ -1,5 +1,9 @@
 import { useEffect, useState, useRef } from "react";
-import { closeVideoCall, toggleMute, toggleVideo } from "@/webrtc/video";
+import {
+  closeVideoCall,
+  toggleMute,
+  toggleVideo,
+} from "@/features/calls/webrtc/video";
 
 export const useVideoCall = (selectedUser) => {
   const [incomingCall, setIncomingCall] = useState(null);

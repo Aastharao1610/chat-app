@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { Button } from "../ui/button";
-
+import { Button } from "@/components/ui/button";
 const ChatRequestList = () => {
   const [requests, setRequests] = useState([]);
   const { user } = useSelector((state) => state.auth);

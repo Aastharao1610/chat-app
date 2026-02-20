@@ -168,7 +168,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { UserRoundPlus } from "lucide-react";
-import ChatRequestModal from "../ChatrequestModal/chatRequestModal";
+import ChatRequestModal from "../../../../components/modal/ChatrequestModal/chatRequestModal";
 import { setChats } from "@/store/chatSlice";
 import { cn } from "@/lib/utils";
 

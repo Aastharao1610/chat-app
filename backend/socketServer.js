@@ -59,16 +59,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // socket.on("disconnect", () => {
-  //   if (userId) {
-  //     if (onlineUsers.get(userId) === socket.id) {
-  //       onlineUsers.delete(userId);
-  //     }
-  //     io.emit("get-online-users", Array.from(onlineUsers.keys()));
-  //     console.log(`User ${userId} disconnected`);
-  //   }
-  // });
-
   socket.on("disconnect", async (reason) => {
     if (!userId) return;
 
@@ -250,7 +240,7 @@ app.post("/emit-message", (req, res) => {
   // CRITICAL: Ensure these room names match the socket.join names exactly
   io.to(`user-${receiverId}`).emit("receive-message", message);
   io.to(`user-${senderId}`).emit("receive-message", message);
-
+  console.log(`message sent from user ${senderId} to ${receiverId}`);
   return res.status(200).json({ success: true });
 });
 app.post("/emit-message", (req, res) => {

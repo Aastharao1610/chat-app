@@ -4,13 +4,13 @@ import {
   closeCall,
   flushIceQuese,
   toggleMute,
-} from "@/webrtc/audio";
+} from "@/features/calls/webrtc/audio";
 import {
   createPeerConnection,
   getMicroPhone,
   addLocalTracks,
   getPeerConnection,
-} from "@/webrtc/audio";
+} from "@/features/calls/webrtc/audio";
 
 export const useAudioCall = (selectedUser) => {
   const [incomingCall, setIncomingCall] = useState(null);

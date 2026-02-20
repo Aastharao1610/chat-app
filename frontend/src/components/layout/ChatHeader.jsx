@@ -2,13 +2,12 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Phone, Video, ArrowLeft } from "lucide-react"; // Added ArrowLeft
-import { useAudioCall } from "@/hooks/useAudioCall";
+import { useAudioCall } from "@/features/hooks/useAudioCall";
 import AudioCallUI from "../Call/AudioCall/audioCall";
-import { useVideoCall } from "@/hooks/useVideoCall";
+import { useVideoCall } from "@/features/hooks/useVideoCall";
 import VideoCallUI from "../Call/videoCall/videoCall";
 
 export default function ChatHeader({ selectedUser, onBack }) {
-  // Added onBack prop
   const [isTyping, setIsTyping] = useState(false);
   const onlineUsers = useSelector((state) => state.chat.onlineUsers);
   const isOnline = onlineUsers.some((id) => id == selectedUser?.id);
