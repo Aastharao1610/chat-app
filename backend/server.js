@@ -26,7 +26,8 @@ io.on("connection", (socket) => {
     console.log("Client disconnected:", socket.id);
   });
 });
+const PORT = process.env.PORT || 5000;
 
-server.listen(5000, () => {
-  console.log("http://192.168.1.88:5000/");
+app.listen(PORT, () => {
+  console.log(`Server running on ${PORT}`);
 });
