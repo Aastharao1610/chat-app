@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
 export function middleware(req) {
-  const token = req.cookies.get("token")?.value;
-
+  console.log(req.cookies);
+  const token = req.cookies.get("refreshToken")?.value;
+  console.log(token);
   const { pathname } = req.nextUrl;
 
   const isLoginPage = pathname.startsWith("/login");
