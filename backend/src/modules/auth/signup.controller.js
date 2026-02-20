@@ -48,12 +48,12 @@ export const signup = async (req, res) => {
       }
 
       // Only after DB update, try sending email
-      await sendEmail({
-        to: email,
-        subject: "Verify your Email",
-        html: `<p>Click the link to verify your email:</p>
-               <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Verify Email</a>`,
-      });
+    });
+    await sendEmail({
+      to: email,
+      subject: "Verify your Email",
+      html: `<p>Click the link to verify your email:</p>
+             <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Verify Email</a>`,
     });
 
     res.status(201).json({ message: "Verification email sent" });
