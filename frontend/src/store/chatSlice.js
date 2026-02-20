@@ -4,12 +4,16 @@ const initialState = {
   messages: [],
   chats: [],
   onlineUsers: [],
+  selectedChat: null,
 };
 
 const chatSlice = createSlice({
   name: "chat",
   initialState,
   reducers: {
+    setSelectedChat: (state, action) => {
+      state.selectedChat = action.payload;
+    },
     setMessages: (state, action) => {
       // Logic: Use this only when loading a chat for the first time
       state.messages = action.payload;
@@ -60,6 +64,7 @@ export const {
   updateChat,
   setOnlineUsers,
   markAsRead,
+  setSelectedChat,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

@@ -2,7 +2,14 @@
 @import "tw-animate-css";
 
 /* globals.css */
-
+/* Hide mobile bottom nav when a chat is active */
+@media (max-width: 768px) {
+  body:has(.chat-active-view) nav.fixed.bottom-0 {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
 :root {
   --bg: #ffffff;
   --text: #000000;

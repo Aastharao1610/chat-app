@@ -35,8 +35,7 @@ export default function LoginSignup() {
 
       if (isSignup) {
         const res = await axios.post(
-          // `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/signup`,
-          `http://192.168.1.88:5000/api/auth/signup`,
+          `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/signup`,
 
           data,
         );
@@ -51,7 +50,7 @@ export default function LoginSignup() {
       } else {
         const res = await axios.post(
           `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`,
-          // `http://192.168.1.88:5000/api/auth/login`,
+
           {
             email: data.email,
             password: data.password,
@@ -65,7 +64,7 @@ export default function LoginSignup() {
           dispatch(
             loginAction({
               user: res.data.user,
-              token: res.data.accessToken, // from backend response
+              token: res.data.accessToken,
             }),
           );
           toast.success("Login successful!");
@@ -84,12 +83,12 @@ export default function LoginSignup() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-10">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-6">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md md:max-w-lg p-6 md:p-10">
         <div className="flex justify-center mb-6">
           <button
             type="button"
-            className={`w-1/2 py-2 rounded-l-lg font-semibold cursor-pointer transition-colors ${
+            className={`w-1/2 py-2.5 rounded-l-lg font-semibold cursor-pointer transition-colors text-sm md:text-base ${
               !isSignup
                 ? "bg-gradient-to-r from-blue-600 to-blue-400 text-white"
                 : "bg-gray-200 text-gray-600"
@@ -103,7 +102,7 @@ export default function LoginSignup() {
           </button>
           <button
             type="button"
-            className={`w-1/2 py-2 rounded-r-lg cursor-pointer font-semibold transition-colors ${
+            className={`w-1/2 py-2.5 rounded-r-lg cursor-pointer font-semibold transition-colors text-sm md:text-base ${
               isSignup
                 ? "bg-gradient-to-r from-blue-600 to-blue-400 text-white"
                 : "bg-gray-200 text-gray-600"
@@ -117,24 +116,27 @@ export default function LoginSignup() {
           </button>
         </div>
 
-        <h2 className="text-3xl font-bold text-center mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8">
           {isSignup ? "Signup Form" : "Login Form"}
         </h2>
 
-        <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+        <form
+          className="space-y-4 md:space-y-5"
+          onSubmit={handleSubmit(onSubmit)}
+        >
           {isSignup && (
             <div>
               <input
                 type="text"
                 placeholder="Full Name"
-                className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm md:text-base"
                 {...register("name", {
                   required: "Full Name is required",
                   minLength: { value: 2, message: "Name too short" },
                 })}
               />
               {errors.name && (
-                <p className="text-sm text-red-600 mt-1">
+                <p className="text-xs md:text-sm text-red-600 mt-1">
                   {errors.name.message}
                 </p>
               )}
@@ -145,40 +147,24 @@ export default function LoginSignup() {
             <input
               type="email"
               placeholder="Email Address"
-              className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm md:text-base"
               {...register("email", {
                 required: "Email is required",
                 pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
               })}
             />
             {errors.email && (
-              <p className="text-sm text-red-600 mt-1">
+              <p className="text-xs md:text-sm text-red-600 mt-1">
                 {errors.email.message}
               </p>
             )}
           </div>
 
-          {/* <div>
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              {...register("password", {
-                required: "Password is required",
-                minLength: { value: 6, message: "Minimum 6 characters" },
-              })}
-            />
-            {errors.password && (
-              <p className="text-sm text-red-600 mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div> */}
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 pr-10"
+              className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 pr-10 text-sm md:text-base"
               {...register("password", {
                 required: "Password is required",
                 minLength: { value: 6, message: "Minimum 6 characters" },
@@ -188,17 +174,17 @@ export default function LoginSignup() {
               className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-600"
               onClick={() => setShowPassword((prev) => !prev)}
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </div>
             {errors.password && (
-              <p className="text-sm text-red-600 mt-1">
+              <p className="text-xs md:text-sm text-red-600 mt-1">
                 {errors.password.message}
               </p>
             )}
           </div>
 
           {!isSignup && (
-            <div className="text-right cursor-pointer text-sm text-blue-500 hover:underline cursor-pointer">
+            <div className="text-right cursor-pointer text-xs md:text-sm text-blue-500 hover:underline">
               Forgot password?
             </div>
           )}
@@ -206,10 +192,10 @@ export default function LoginSignup() {
           <button
             type="submit"
             disabled={loading || !isValid}
-            className={`w-full py-3 rounded-md font-semibold ${
+            className={`w-full py-3 rounded-md font-semibold text-sm md:text-base transition-all ${
               loading || !isValid
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-blue-400 cursor-pointer text-white hover:opacity-90"
+                : "bg-gradient-to-r from-blue-600 to-blue-400 cursor-pointer text-white hover:opacity-90 active:scale-[0.98]"
             }`}
           >
             {loading

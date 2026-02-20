@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import axios from "axios";
+import { SendHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function ChatInput({ receiverId, receiverUser, chatId }) {
   const [text, setText] = useState("");
@@ -37,19 +39,27 @@ export default function ChatInput({ receiverId, receiverUser, chatId }) {
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex items-center gap-1 md:gap-2  dark:bg-transparent p-1">
       <input
-        className="flex-1 border border-gray-300 rounded-full px-4 py-2"
+        className="flex-1 border border-gray-300 dark:border-gray-700 rounded-full px-4 py-2 md:py-2.5 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800"
         placeholder={`Message ${receiverUser?.name || "user"}...`}
         value={text}
         onChange={handleInputChange}
         onKeyDown={(e) => e.key === "Enter" && handleSend()}
       />
+
       <button
         onClick={handleSend}
-        className="bg-blue-500 text-white px-4 py-2 rounded-full"
+        disabled={!text.trim()}
+        className={cn(
+          "bg-blue-600 text-white p-2.5 md:px-5 md:py-2 rounded-full transition-all flex items-center justify-center",
+          text.trim()
+            ? "opacity-100 active:scale-90"
+            : "opacity-50 cursor-not-allowed",
+        )}
       >
-        Send
+        <SendHorizontal size={20} className="md:mr-2" />
+        <span className="hidden md:inline font-medium">Send</span>
       </button>
     </div>
   );

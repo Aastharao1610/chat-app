@@ -14,6 +14,7 @@ const app = express();
 // CORS + Parsers
 app.use(
   cors({
+    origin: "*",
     // origin: "http://localhost:3000",
     origin: true,
     credentials: true,
@@ -25,6 +26,9 @@ app.use(cookieParser());
 app.use((req, res, next) => {
   req.io = app.get("io");
   next();
+});
+app.get("/health", (req, res) => {
+  res.send("Server running 🚀");
 });
 
 app.use("/api/auth", authRoutes);
