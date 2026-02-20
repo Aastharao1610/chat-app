@@ -49,13 +49,14 @@ export const signup = async (req, res) => {
 
       // Only after DB update, try sending email
     });
-    await sendEmail({
-      to: email,
-      subject: "Verify your Email",
-      html: `<p>Click the link to verify your email:</p>
-             <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Verify Email</a>`,
-    });
+    // await sendEmail({
+    //   to: email,
+    //   subject: "Verify your Email",
+    //   html: `<p>Click the link to verify your email:</p>
+    //          <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Verify Email</a>`,
+    // });
 
+    e3aa23a8 - 7572 - 4987 - 89e5 - b2df4d4b50d9;
     res.status(201).json({ message: "Verification email sent" });
   } catch (error) {
     console.error("Signup Error:", error);
