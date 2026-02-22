@@ -66,16 +66,16 @@ export const login = async (req, res) => {
     // 5. Set cookies
     res.cookie("token", accessToken, {
       httpOnly: true,
-      secure: true, // change this for production!
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production", // Automatically false on local, true on Vercel
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 60 * 60 * 1000,
       path: "/",
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true, // change this for production!
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production", // Automatically false on local, true on Vercel
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
