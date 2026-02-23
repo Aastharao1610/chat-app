@@ -10,7 +10,10 @@ import VideoCallUI from "../Call/videoCall/videoCall";
 export default function ChatHeader({ selectedUser, onBack }) {
   const [isTyping, setIsTyping] = useState(false);
   const onlineUsers = useSelector((state) => state.chat.onlineUsers);
-  const isOnline = onlineUsers.some((id) => id == selectedUser?.id);
+  // Force both to strings to be 100% sure they match
+  const isOnline = onlineUsers.some(
+    (id) => String(id) === String(selectedUser?.id),
+  );
   const { user } = useSelector((state) => state.auth);
 
   const callLogic = useAudioCall(selectedUser);

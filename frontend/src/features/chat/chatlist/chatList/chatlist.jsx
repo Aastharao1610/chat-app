@@ -195,7 +195,7 @@ export default function ChatList({ onSelectChat, selectedChat }) {
   const fetchChats = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const res = await axios.get(`/chat/my`, { withCredentials: true });
+      const res = await axios.get(`/api/chat/my`, { withCredentials: true });
 
       const allChats = res.data.chats || [];
       const uniqueChats = [];

@@ -34,7 +34,7 @@ export default function ChatMessages({ selectedChat, onBack }) {
     const fetchMessages = async () => {
       if (!selectedChat?.id) return;
       try {
-        const res = await axios.get(`/message/${selectedChat.id}`, {
+        const res = await axios.get(`/api/message/${selectedChat.id}`, {
           withCredentials: true,
         });
         dispatch(setMessages(res.data.messages || []));
@@ -72,7 +72,7 @@ export default function ChatMessages({ selectedChat, onBack }) {
       if (!otherUser) return;
 
       try {
-        const res = await axios.get(`/calls/${user.id}/${otherUser.id}`);
+        const res = await axios.get(`/api/calls/${user.id}/${otherUser.id}`);
         console.log(res.data);
         setCallLogs(res.data || []);
       } catch (error) {
@@ -150,7 +150,7 @@ export default function ChatMessages({ selectedChat, onBack }) {
       if (selectedChat?.id && unread) {
         try {
           await axios.patch(
-            `/message/messages/read/${selectedChat.id}`,
+            `/api/message/messages/read/${selectedChat.id}`,
             {},
             { withCredentials: true },
           );

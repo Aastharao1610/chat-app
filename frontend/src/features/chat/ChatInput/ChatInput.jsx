@@ -24,7 +24,7 @@ export default function ChatInput({ receiverId, receiverUser, chatId }) {
 
     try {
       const res = await axios.post(
-        `/message`,
+        `/api/message`,
         {
           text,
           receiverId,

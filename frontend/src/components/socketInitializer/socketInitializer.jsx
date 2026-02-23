@@ -24,6 +24,7 @@ const SocketInitializer = () => {
 
     // 1. Listen for Online Users (Fixes "Online status not visible")
     socket.on("get-online-users", (userIds) => {
+      console.log("Frontend received online users:", userIds);
       dispatch(setOnlineUsers(userIds));
     });
 

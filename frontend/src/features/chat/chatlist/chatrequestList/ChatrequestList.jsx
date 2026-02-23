@@ -11,7 +11,7 @@ const ChatRequestList = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await axios.get(`/request/my`, {
+        const res = await axios.get(`/api/request/my`, {
           withCredentials: true,
         });
         console.log(res, "res");
@@ -27,7 +27,7 @@ const ChatRequestList = () => {
   const handleAccept = async (requestId) => {
     try {
       const res = await axios.post(
-        `/request/accept-request/`,
+        `/api/request/accept-request/`,
         { requestId },
         { withCredentials: true },
       );

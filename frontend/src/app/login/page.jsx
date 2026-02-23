@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import VerificationModal from "@/components/modal/verificationModal";
+// import VerificationModal from "@/components/modal/verificationModal";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
@@ -13,7 +13,7 @@ console.log("Target URL:", `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`);
 export default function LoginSignup() {
   console.log("Target URL:", `/auth/login`);
   const [isSignup, setIsSignup] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -207,10 +207,10 @@ export default function LoginSignup() {
         </form>
       </div>
 
-      <VerificationModal
+      {/* <VerificationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-      />
+      /> */}
     </div>
   );
 }
