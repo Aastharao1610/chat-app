@@ -17,7 +17,7 @@ import { getSocket } from "@/lib/socket";
 const ChatRequestModal = ({ open, onClose }) => {
   const [email, setEmail] = useState("");
 
-  const { user: currentUser } = useSelector((state) => state.auth); // ✅ ensure inside component
+  const { user: currentUser } = useSelector((state) => state.auth);
   const handleSend = async () => {
     console.log("📤 Sending request...");
     try {

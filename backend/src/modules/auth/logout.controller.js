@@ -2,9 +2,6 @@ import prisma from "../../config/db.js";
 
 const logout = async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
-  // console.log(req);
-  // console.log("Cookies received:", req.cookies, "req-cookies");
-  // console.log("Refresh Token:", refreshToken);
 
   try {
     // 1. No refresh token? Send error

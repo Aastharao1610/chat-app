@@ -17,7 +17,7 @@ export const createPeerConnection = (socket, targetUserId) => {
   peerConnection.onicecandidate = (event) => {
     if (event.candidate && activeSocket) {
       activeSocket.emit("ice-candidate", {
-        targetUserId: activeTarget,
+        to: activeTarget,
         candidate: event.candidate,
       });
     }
@@ -43,7 +43,11 @@ export const getMicroPhone = async () => {
   }
 
   localStream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    },
   });
   console.log(localStream);
 
