@@ -1,16 +1,93 @@
 import axios from "axios";
 import prisma from "../../config/db.js";
 
+// export const createMessage = async (req, res) => {
+//   try {
+//     const { text, receiverId } = req.body;
+//     const senderId = req.user.id;
+
+//     const io = req.app.get("io");
+//     if (!text || !receiverId) {
+//       return res.status(400).json({ message: "Missing fields" });
+//     }
+
+//     // Find or create chat
+//     let chat = await prisma.chat.findFirst({
+//       where: {
+//         isGroup: false,
+//         users: {
+//           every: {
+//             id: { in: [senderId, receiverId] },
+//           },
+//         },
+//       },
+//       include: { users: true },
+//     });
+
+//     if (!chat) {
+//       chat = await prisma.chat.create({
+//         data: {
+//           isGroup: false,
+//           users: {
+//             connect: [{ id: senderId }, { id: receiverId }],
+//           },
+//         },
+//       });
+//     }
+
+//     // Create message
+//     const message = await prisma.message.create({
+//       data: {
+//         text,
+//         senderId,
+//         receiverId,
+//         chatId: chat.id,
+//       },
+//     });
+//     await prisma.chat.update({
+//       where: { id: chat.id },
+//       data: {
+//         updatedAt: new Date(),
+//       },
+//     });
+
+//     try {
+//       // await axios.post("http://localhost:4001/emit-message", {
+//       //   receiverId,
+//       //   senderId,
+//       //   message,
+//       // });
+//       if (io) {
+//         io.to(`user-${receiverId}`).emit("receive-message", message);
+//         io.to(`user-${senderId}`).emit("receive-message", message);
+//         console.log(`message sent to ${receiverId} from ${senderId}`);
+//       }
+//       res.status(201).json({ message });
+//     } catch (error) {
+//       console.error("Error creation message:", error);
+//       res.status(500).json({ message: "Failed to send message" });
+//     }
+//     // io.to(`user-${receiverId}`).emit("receive-message", message);
+//     // io.to(`user-${senderId}`).emit("receive-message", message);
+
+//     res.status(201).json({ message });
+//   } catch (err) {
+//     console.error("Message creation error:", err);
+//     res.status(500).json({ message: "Failed to save message" });
+//   }
+// };
+
 export const createMessage = async (req, res) => {
   try {
     const { text, receiverId } = req.body;
     const senderId = req.user.id;
+    const io = req.app.get("io");
 
     if (!text || !receiverId) {
       return res.status(400).json({ message: "Missing fields" });
     }
 
-    // Find or create chat
+    // 1. Find or create chat
     let chat = await prisma.chat.findFirst({
       where: {
         isGroup: false,
@@ -34,7 +111,7 @@ export const createMessage = async (req, res) => {
       });
     }
 
-    // Create message
+    // 2. Create message in DB
     const message = await prisma.message.create({
       data: {
         text,
@@ -43,28 +120,30 @@ export const createMessage = async (req, res) => {
         chatId: chat.id,
       },
     });
+
+    // 3. Update chat timestamp
     await prisma.chat.update({
       where: { id: chat.id },
-      data: {
-        updatedAt: new Date(),
-      },
+      data: { updatedAt: new Date() },
     });
 
-    await axios.post("http://localhost:4001/emit-message", {
-      receiverId,
-      senderId,
-      message,
-    });
-    // io.to(`user-${receiverId}`).emit("receive-message", message);
-    // io.to(`user-${senderId}`).emit("receive-message", message);
+    // 4. Send Real-time Socket Event
+    if (io) {
+      io.to(`user-${receiverId}`).emit("receive-message", message);
+      io.to(`user-${senderId}`).emit("receive-message", message);
+      console.log(`Socket: message sent to ${receiverId} from ${senderId}`);
+    }
 
-    res.status(201).json({ message });
+    // 5. FINAL AND ONLY RESPONSE
+    return res.status(201).json({ message });
   } catch (err) {
     console.error("Message creation error:", err);
-    res.status(500).json({ message: "Failed to save message" });
+    // Ensure we only send an error response if headers haven't been sent yet
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "Failed to save message" });
+    }
   }
 };
-
 export const getMessagesByChatId = async (req, res) => {
   const { chatId } = req.params;
 
@@ -85,6 +164,7 @@ export const getMessagesByChatId = async (req, res) => {
 export const markMessagesAsRead = async (req, res) => {
   const { chatId } = req.params;
   const userId = req.user.id;
+  const io = req.app.get("io");
 
   try {
     const updated = await prisma.message.updateMany({
@@ -106,15 +186,16 @@ export const markMessagesAsRead = async (req, res) => {
 
     const senderId = messages?.[0]?.senderId;
     if (senderId) {
-      await axios.post("http://localhost:4001/messages-read", {
-        chatId: parseInt(chatId),
-        readerId: userId,
-        senderId,
-      });
-      // io.to(`user-${senderId}`).emit("messages-read", {
+      // await axios.post("http://localhost:4001/messages-read", {
       //   chatId: parseInt(chatId),
       //   readerId: userId,
+      //   senderId,
       // });
+      io.to(`user-${senderId}`).emit("messages-read", {
+        chatId: parseInt(chatId),
+        readerId: userId,
+      });
+      console.log(`Read receipt sent to user-${senderId}`);
     }
 
     res.status(200).json({ success: true, count: updated.count });

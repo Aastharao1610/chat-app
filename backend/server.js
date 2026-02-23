@@ -1,37 +1,3 @@
-// import http from "http";
-// import { Server } from "socket.io";
-// import app from "./src/app.js";
-
-// const server = http.createServer(app);
-
-// const io = new Server(server, {
-//   cors: {
-//     origin: ["http://localhost:3000", "*"],
-//     methods: ["GET", "POST"],
-//     credentials: true,
-//   },
-// });
-
-// app.set("io", io);
-
-// io.on("connection", (socket) => {
-//   console.log("Client connected", socket.id);
-
-//   socket.on("send-message", (data) => {
-//     console.log("Message via socket:", data);
-//     socket.broadcast.emit("receive-message", data);
-//   });
-
-//   socket.on("disconnect", () => {
-//     console.log("Client disconnected:", socket.id);
-//   });
-// });
-// const PORT = process.env.PORT || 5000;
-
-// app.listen(PORT, () => {
-//   console.log(`Server running on ${PORT}`);
-// });
-
 import "dotenv/config";
 import http from "http";
 import { Server } from "socket.io";
@@ -138,9 +104,13 @@ io.on("connection", (socket) => {
 
   // ICE
   socket.on("ice-candidate", ({ to, candidate }) => {
+    console.log(`📡 Routing ICE: ${userId} -> user-${to}`);
     io.to(`user-${to}`).emit("ice-candidate", { candidate });
   });
-
+  //
+  socket.on("toggle-video", ({ to, isVideoOff }) => {
+    io.to(`user-${to}`).emit("toggle-video", { isVideoOff });
+  });
   // End call
   socket.on("end-call", async ({ targetId, type }) => {
     try {
@@ -171,12 +141,59 @@ io.on("connection", (socket) => {
       console.error("end-call error:", err);
     }
   });
+  socket.on("call-timeout", async ({ receiverId, type }) => {
+    const key = `${userId}_${receiverId}`;
+    const callId = activeCalls.get(key);
 
+    if (callId) {
+      await prisma.call.update({
+        where: { id: callId },
+        data: { status: "MISSED", endedAt: new Date() },
+      });
+      activeCalls.delete(key);
+    }
+    console.log(`${type} Call ended due to timeout`);
+    io.to(`user-${receiverId}`).emit("call-ended", { type });
+  });
+  socket.on("reject-call", async ({ callerId, type }) => {
+    const key = callerId + "_" + userId;
+    const callId = activeCalls.get(key);
+
+    if (callId) {
+      await prisma.call.update({
+        where: { id: callId },
+        data: {
+          status: "REJECTED",
+          endedAt: new Date(),
+        },
+      });
+
+      activeCalls.delete(key);
+    }
+
+    io.to(`user-${callerId}`).emit("call-rejected", { type });
+    console.log("call rejected by", userId);
+  });
   // Disconnect
   socket.on("disconnect", () => {
     if (userId && onlineUsers.get(userId) === socket.id) {
       onlineUsers.delete(userId);
       io.emit("get-online-users", Array.from(onlineUsers.keys()));
+
+      activeCalls.forEach((callId, key) => {
+        if (key.includes(String(userId))) {
+          const [callerId, receiverId] = key.split("_");
+          const targetId = callerId === String(userId) ? receiverId : callerId;
+
+          io.to(`user-${targetId}`).emit("call-ended", {
+            reason: "disconnected",
+          });
+          activeCalls.delete(key);
+          console.log(
+            `Call ${callId} ended due to user ${userId} disconnecting`,
+          );
+        }
+      });
     }
   });
 });

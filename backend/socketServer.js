@@ -199,20 +199,20 @@
 //     }
 //   });
 //   // missed call (call timeout)
-//   socket.on("call-timeout", async ({ receiverId, type }) => {
-//     const key = `${userId}_${receiverId}`;
-//     const callId = activeCalls.get(key);
+// socket.on("call-timeout", async ({ receiverId, type }) => {
+//   const key = `${userId}_${receiverId}`;
+//   const callId = activeCalls.get(key);
 
-//     if (callId) {
-//       await prisma.call.update({
-//         where: { id: callId },
-//         data: { status: "MISSED", endedAt: new Date() },
-//       });
-//       activeCalls.delete(key);
-//     }
-//     console.log(`${type} Call ended due to timeout`);
-//     io.to(`user-${receiverId}`).emit("call-ended", { type });
-//   });
+//   if (callId) {
+//     await prisma.call.update({
+//       where: { id: callId },
+//       data: { status: "MISSED", endedAt: new Date() },
+//     });
+//     activeCalls.delete(key);
+//   }
+//   console.log(`${type} Call ended due to timeout`);
+//   io.to(`user-${receiverId}`).emit("call-ended", { type });
+// });
 //   // 4. reject
 //   socket.on("reject-call", async ({ callerId, type }) => {
 //     const key = callerId + "_" + userId;
