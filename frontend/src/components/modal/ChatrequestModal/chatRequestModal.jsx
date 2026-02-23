@@ -22,14 +22,14 @@ const ChatRequestModal = ({ open, onClose }) => {
     console.log("📤 Sending request...");
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/request/send",
+        `/api/request/send`,
         {
           senderId: currentUser.id,
           receiverEmail: email,
         },
         {
           withCredentials: true,
-        }
+        },
       );
 
       console.log("✅ Response received:", response);
