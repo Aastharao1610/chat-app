@@ -35,11 +35,7 @@ export default function LoginSignup() {
       setLoading(true);
 
       if (isSignup) {
-        const res = await axios.post(
-          `/api/auth/signup`,
-
-          data,
-        );
+        const res = await axios.post(`/api/auth/signup`, data);
 
         if (res.data?.message === "User already exists") {
           toast.error("User already exists. Redirecting to login...");
