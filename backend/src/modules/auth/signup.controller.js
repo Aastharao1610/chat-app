@@ -1,6 +1,6 @@
-// import prisma from "../../config/db.js";
-// import bcrypt from "bcrypt";
-// import { v4 as uuidv4 } from "uuid";
+import prisma from "../../config/db.js";
+import bcrypt from "bcrypt";
+import { v4 as uuidv4 } from "uuid";
 // import { sendEmail } from "../../services/mail.js";
 
 // export const signup = async (req, res) => {
