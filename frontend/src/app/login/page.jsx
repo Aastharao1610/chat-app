@@ -39,7 +39,7 @@ export default function LoginSignup() {
 
       if (isSignup) {
         const res = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/signup`,
+          `/api/auth/signup`,
 
           data,
         );
@@ -53,7 +53,7 @@ export default function LoginSignup() {
         }
       } else {
         const res = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`,
+          `/api/auth/login`,
 
           {
             email: data.email,
