@@ -19,41 +19,55 @@ export const signup = async (req, res) => {
 
     // Wrap everything in a transaction
     await prisma.$transaction(async (tx) => {
-      const existingPending = await tx.pendingUser.findUnique({
-        where: { email },
-      });
+      // const existingPending = await tx.pendingUser.findUnique({
+      //   where: { email },
+      // });
 
-      if (existingPending) {
-        await tx.pendingUser.update({
-          where: { email },
-          data: {
-            name,
-            hashedPassword,
-            token,
-            expiresAt,
-            verified: false,
-          },
-        });
+      // if (existingPending) {
+      //   await tx.pendingUser.update({
+      //     where: { email },
+      //     data: {
+      //       name,
+      //       hashedPassword,
+      //       token,
+      //       expiresAt,
+      //       verified: false,
+      //     },
+      //   });
+      // } else {
+      //   await tx.pendingUser.create({
+      //     data: {
+      //       name,
+      //       email,
+      //       hashedPassword,
+      //       token,
+      //       expiresAt,
+      //       verified: false,
+      //     },
+      //   });
+      // }
+
+      // // Only after DB update, try sending email
+      // await sendEmail({
+      //   to: email,
+      //   subject: "Verify your Email",
+      //   html: `<p>Click the link to verify your email:</p>
+      //          <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Verify Email</a>`,
+      // });
+
+      const existingUser = await tx.user.findUnique({ where: { email } });
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
       } else {
-        await tx.pendingUser.create({
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await prisma.user.create({
           data: {
             name,
             email,
-            hashedPassword,
-            token,
-            expiresAt,
-            verified: false,
+            password: hashedPassword,
           },
         });
       }
-
-      await sendEmail({
-        to: email,
-        subject: "Verify your Email",
-        html: `<p>Click the link to verify your email:</p>
-               <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Verify Email</a>`,
-      });
-      // Only after DB update, try sending email
     });
 
     res.status(201).json({ message: "Verification email sent" });

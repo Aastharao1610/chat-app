@@ -1,5 +1,4 @@
 import prisma from "../../config/db.js";
-import bcrypt from "bcrypt";
 
 export const verifyEmail = async (req, res) => {
   const { token } = req.query;
