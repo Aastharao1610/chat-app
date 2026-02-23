@@ -37,12 +37,13 @@ export default function LoginSignup() {
       if (isSignup) {
         const res = await axios.post(`/api/auth/signup`, data);
 
-        if (res.data?.message === "User already exists") {
-          toast.error("User already exists. Redirecting to login...");
+        // if (res.data?.message === "User already exists") {
+        //   toast.error("User already exists. Redirecting to login...");
+        //   setIsSignup(false);
+        if (res.status === 201) {
+          toast.success("User created successfully!");
           setIsSignup(false);
-        } else {
-          setIsModalOpen(true);
-          setTimeout(() => setIsModalOpen(false), 6000);
+          reset();
         }
       } else {
         const res = await axios.post(
