@@ -21,7 +21,7 @@ export default function VerifyEmailClient() {
 
     const verifyEmail = async () => {
       try {
-        const res = await axios.get(`/auth/verify-email?token=${token}`);
+        const res = await axios.get(`/api/auth/verify-email?token=${token}`);
 
         if (res.data?.success) {
           setStatus("success");

@@ -34,11 +34,7 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(
-        "http://localhost:5000/api/auth/logout",
-        {},
-        { withCredentials: true },
-      );
+      await axios.post("/api/auth/logout", {}, { withCredentials: true });
 
       dispatch(logout());
       toast.success("Logout successful!", { autoClose: 2000 });
