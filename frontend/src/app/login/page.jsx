@@ -11,10 +11,7 @@ import { useDispatch } from "react-redux";
 import { login as loginAction } from "@/store/authSlice";
 console.log("Target URL:", `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`);
 export default function LoginSignup() {
-  console.log(
-    "Target URL:",
-    `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/login`,
-  );
+  console.log("Target URL:", `/auth/login`);
   const [isSignup, setIsSignup] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);

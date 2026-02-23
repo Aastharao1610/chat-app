@@ -13,12 +13,9 @@ const useLoadUser = () => {
       console.log("object");
       try {
         console.log("Try called");
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/me`,
-          {
-            withCredentials: true,
-          },
-        );
+        const res = await axios.get(`/auth/me`, {
+          withCredentials: true,
+        });
         console.log(res, "responsee ggg");
         if (res.data?.user) {
           dispatch(login({ user: res.data.user, token: null }));

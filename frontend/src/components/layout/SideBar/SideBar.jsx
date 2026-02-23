@@ -30,11 +30,7 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND}/api/auth/logout`,
-        {},
-        { withCredentials: true },
-      );
+      await axios.post(`/auth/logout`, {}, { withCredentials: true });
       dispatch(logout());
       toast.success("Logged out successfully!");
       router.push("/login");
