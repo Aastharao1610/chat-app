@@ -14,9 +14,7 @@ const app = express();
 // CORS + Parsers
 app.use(
   cors({
-    origin: "*",
-    // origin: "http://localhost:3000",
-    origin: true,
+    origin: ["http://localhost:3000", "https://chat-app-6sk7.vercel.app"],
     credentials: true,
   }),
 );

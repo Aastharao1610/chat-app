@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 export const login = async (req, res) => {
   try {
     console.log("Login route hit");
+    console.log("NODE_ENV:", process.env.NODE_ENV);
 
     const { email, password } = req.body;
     console.log("Body:", req.body);
@@ -68,6 +69,8 @@ export const login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // Automatically false on local, true on Vercel
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      // secure: false,
+      // sameSite: "lax",
       maxAge: 60 * 60 * 1000,
       path: "/",
     });
@@ -76,6 +79,8 @@ export const login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // Automatically false on local, true on Vercel
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      // secure: false,
+      // sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
