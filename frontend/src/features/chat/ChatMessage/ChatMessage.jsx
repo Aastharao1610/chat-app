@@ -65,6 +65,22 @@ export default function ChatMessages({ selectedChat, onBack }) {
     const formattedHours = hours % 12 || 12;
     return `${formattedHours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
   };
+  const formatCallDuration = (seconds) => {
+    if (!seconds || seconds <= 0) {
+      return "00:00";
+    }
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${mins}m ${secs}s`;
+    } else if (mins > 0) {
+      return `${mins}m ${secs}s`;
+    } else {
+      return `${secs}s`;
+    }
+  };
   useEffect(() => {
     const fetchCalls = async () => {
       if (!selectedChat?.users || !user?.id) return;
@@ -113,7 +129,7 @@ export default function ChatMessages({ selectedChat, onBack }) {
     }));
 
     return [...formattedMessages, ...formattedCalls].sort(
-      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
   }, [chatMessages, callLogs]);
 
@@ -242,18 +258,21 @@ export default function ChatMessages({ selectedChat, onBack }) {
                   <div key={call.id} className="flex justify-center my-3">
                     <div className="bg-gray-100 px-4 py-2 rounded-xl text-sm text-gray-700 border">
                       {call.status === "MISSED" && (
-                        <span className="text-red-500">📞 Missed Call</span>
+                        <span className="text-red-500">
+                          📞 Missed {call.type.toLowerCase()} Call
+                        </span>
                       )}
 
                       {call.status === "COMPLETED" && (
                         <>
-                          📞 {isOutgoing ? "Outgoing" : "Incoming"} Call •{" "}
-                          {call.duration}s
+                          📞 {isOutgoing ? "Outgoing" : "Incoming"}{" "}
+                          {call.type.toLowerCase()} Call •{" "}
+                          {formatCallDuration(call.duration)}
                         </>
                       )}
 
                       {call.status === "REJECTED" && (
-                        <span>📞 Call Rejected</span>
+                        <span>📞 {call.type.toLowerCase()} Call Rejected</span>
                       )}
                     </div>
                   </div>

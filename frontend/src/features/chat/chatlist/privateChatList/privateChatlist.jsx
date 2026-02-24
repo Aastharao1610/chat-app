@@ -1,7 +1,7 @@
 import React from "react";
 
-const privateChatlist = () => {
+const PrivateChatlist = () => {
   return <div>privateChatlist</div>;
 };
 
-export default privateChatlist;
+export default PrivateChatlist;

@@ -75,6 +75,7 @@ io.on("connection", (socket) => {
         callId: newCall.id,
         type,
       });
+      console.log(`${receiverId} receiving ${type} call from ${userId}`);
     } catch (err) {
       console.error("call-user error:", err);
     }
@@ -121,15 +122,31 @@ io.on("connection", (socket) => {
       const callId = activeCalls.get(key);
 
       if (callId) {
+        const call = await prisma.call.findUnique({ where: { id: callId } });
+        const endedAt = new Date();
+
+        // If call was never answered, it shouldn't be "COMPLETED"
+        let finalStatus = "COMPLETED";
+        if (!call.answeredAt) {
+          // If the person hanging up is the caller, it's a MISSED call
+          // If the receiver hangs up (rejects), it's REJECTED
+          finalStatus = userId == call.callerId ? "MISSED" : "REJECTED";
+        }
+        const startCall = new Date(call.answeredAt).getTime();
+        const endCall = endedAt.getTime();
+        const duration = call.answeredAt
+          ? Math.floor((endCall - startCall) / 1000)
+          : 0;
+        console.log(duration, "duration logging in backend ");
         await prisma.call.update({
           where: { id: callId },
           data: {
-            status: "COMPLETED",
-            endedAt: new Date(),
+            status: finalStatus,
+            endedAt,
+            duration,
             endedBy: String(userId),
           },
         });
-
         activeCalls.delete(key);
       }
 
@@ -137,6 +154,7 @@ io.on("connection", (socket) => {
         type,
         reason: "ended",
       });
+      console.log(`Call ended by ${userId} for user-${targetId} (${type})`);
     } catch (err) {
       console.error("end-call error:", err);
     }
@@ -175,25 +193,79 @@ io.on("connection", (socket) => {
     console.log("call rejected by", userId);
   });
   // Disconnect
-  socket.on("disconnect", () => {
+  // socket.on("disconnect", () => {
+  //   if (userId && onlineUsers.get(userId) === socket.id) {
+  //     onlineUsers.delete(userId);
+  //     io.emit("get-online-users", Array.from(onlineUsers.keys()));
+
+  //     activeCalls.forEach((callId, key) => {
+  //       if (key.includes(String(userId))) {
+  //         const [callerId, receiverId] = key.split("_");
+  //         const targetId = callerId === String(userId) ? receiverId : callerId;
+
+  //         io.to(`user-${targetId}`).emit("call-ended", {
+  //           reason: "disconnected",
+  //         });
+  //         activeCalls.delete(key);
+  //         console.log(
+  //           `Call ${callId} ended due to user ${userId} disconnecting`,
+  //         );
+  //       }
+  //     });
+  //   }
+  // });
+  socket.on("disconnect", async () => {
     if (userId && onlineUsers.get(userId) === socket.id) {
       onlineUsers.delete(userId);
       io.emit("get-online-users", Array.from(onlineUsers.keys()));
 
-      activeCalls.forEach((callId, key) => {
+      // Process any active calls the disconnected user was part of
+      for (const [key, callId] of activeCalls.entries()) {
         if (key.includes(String(userId))) {
           const [callerId, receiverId] = key.split("_");
           const targetId = callerId === String(userId) ? receiverId : callerId;
 
+          try {
+            const call = await prisma.call.findUnique({
+              where: { id: callId },
+            });
+
+            if (call) {
+              const endedAt = new Date();
+              let finalStatus = "COMPLETED"; // Default for active calls
+              let duration = 0;
+
+              // If the call was never answered before the refresh, it's a MISSED call
+              if (!call.answeredAt) {
+                finalStatus = "MISSED";
+              } else {
+                // Calculate duration for the active call segment
+                const startCall = new Date(call.answeredAt).getTime();
+                duration = Math.floor((endedAt.getTime() - startCall) / 1000);
+              }
+
+              await prisma.call.update({
+                where: { id: callId },
+                data: {
+                  status: finalStatus,
+                  endedAt: endedAt,
+                  duration: duration,
+                  endedBy: String(userId),
+                },
+              });
+            }
+          } catch (err) {
+            console.error("Error updating call status on disconnect:", err);
+          }
+
+          // Notify the other peer to close their UI
           io.to(`user-${targetId}`).emit("call-ended", {
             reason: "disconnected",
           });
+
           activeCalls.delete(key);
-          console.log(
-            `Call ${callId} ended due to user ${userId} disconnecting`,
-          );
         }
-      });
+      }
     }
   });
 });

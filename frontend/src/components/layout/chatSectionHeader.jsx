@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 
 const sectionMap = {
   "/chat": "Chats",
-  "/chat/requests": "Requests",
-  "/chat/private": "Private Chats",
-  "/chat/groups": "Groups",
+  "/requests": "Requests",
+  "/private": "Private Chats",
+  "/groups": "Groups",
 };
 
 const ChatSectionHeader = ({ onActionClick }) => {
