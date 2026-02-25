@@ -1,14 +1,11 @@
-let peerConnection = null;
-let localStream = null;
-
 export const createVideoPeerConnection = (socket, remoteSocketId) => {
-  peerConnection = new RTCPeerConnection({
+  const peerConnection = new RTCPeerConnection({
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
   });
 
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
-      socket.emit("video:ice-candidate", {
+      socket.emit("ice-candidate", {
         to: remoteSocketId,
         candidate: event.candidate,
       });
@@ -17,69 +14,43 @@ export const createVideoPeerConnection = (socket, remoteSocketId) => {
 
   return peerConnection;
 };
-export const getmicrophone = async () => {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  if (!navigator?.mediaDevices?.getUserMedia) {
-    throw new Error("getUserMedia not available");
-  }
-  localStream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
-  });
-  console.log(localStream);
-  return localStream;
-};
 
-export const getCameraStream = async () => {
-  localStream = await navigator.mediaDevices.getUserMedia({
-    video: true,
-    audio: true,
-  });
-
-  return localStream;
-};
-
-export const addLocalVideoTracks = (stream) => {
+export const addLocalVideoTracks = (peerConnection, stream) => {
+  if (!peerConnection || !stream) return;
   stream.getTracks().forEach((track) => {
     peerConnection.addTrack(track, stream);
   });
 };
 
-export const closeVideoCall = () => {
+export const closeVideoCall = (peerConnection, stream) => {
   if (peerConnection) {
     peerConnection.close();
-    peerConnection = null;
   }
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop());
+  }
+};
 
-  if (localStream) {
-    localStream.getTracks().forEach((track) => track.stop());
-    localStream = null;
-  }
+export const getCameraStream = async () => {
+  return await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true,
+  });
 };
 
 export const toggleMute = (stream) => {
   if (!stream) return false;
-
-  const audioTrack = stream.getTracks().find((track) => track.kind === "audio");
-
-  if (!audioTrack) return false;
-
-  audioTrack.enabled = !audioTrack.enabled;
-
+  const audioTrack = stream.getAudioTracks()[0];
+  if (audioTrack) audioTrack.enabled = !audioTrack.enabled;
   console.log("Mic Muted:", !audioTrack.enabled);
-
   return !audioTrack.enabled;
 };
 
 export const toggleVideo = (stream) => {
   if (!stream) return false;
+  const videoTrack = stream.getVideoTracks()[0];
 
-  const videoTrack = stream.getTracks().find((track) => track.kind === "video");
-
-  if (!videoTrack) return false;
-
-  videoTrack.enabled = !videoTrack.enabled;
+  if (videoTrack) videoTrack.enabled = !videoTrack.enabled;
   console.log("Video Off:", !videoTrack.enabled);
 
   return !videoTrack.enabled;

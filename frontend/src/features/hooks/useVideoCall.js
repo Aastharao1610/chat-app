@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import {
+  addLocalVideoTracks,
   closeVideoCall,
   toggleMute,
   toggleVideo,
@@ -33,48 +34,43 @@ export const useVideoCall = (selectedUser) => {
 
   const socket = window.socket;
 
-  // --- 1. UNIFIED STREAM SYNC (The Fix for Local/Remote visibility) ---
   useEffect(() => {
     const syncStreams = () => {
-      // Sync Local Stream
       if (localStreamRef.current && localVideoRef.current && !isVideoOff) {
         if (localVideoRef.current.srcObject !== localStreamRef.current) {
-          console.log("🎥 Syncing local stream to UI");
+          console.log("Syncing local stream to UI");
           localVideoRef.current.srcObject = localStreamRef.current;
           localVideoRef.current.play().catch(() => {});
         }
       }
 
-      // Sync Remote Stream
       if (
         remoteStreamRef.current &&
         remoteVideoRef.current &&
         !isRemoteVideoOff
       ) {
         if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
-          console.log("🎬 Syncing remote stream to UI");
+          console.log(" Syncing remote stream to UI");
           remoteVideoRef.current.srcObject = remoteStreamRef.current;
           remoteVideoRef.current.play().catch(() => {});
         }
       }
     };
 
-    // Run immediately when state changes
     syncStreams();
 
-    // Heartbeat to catch any late renders or tab switches
     const interval = setInterval(syncStreams, 1000);
     return () => clearInterval(interval);
   }, [activeCall, calling, isVideoOff, isRemoteVideoOff]);
 
-  // --- 2. PEER CREATION ---
+  //  PEER CREATION
   const createPeer = (remoteId) => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
 
     pc.ontrack = (event) => {
-      console.log("🛰️ Remote track received");
+      console.log("Remote track received");
       remoteStreamRef.current = event.streams[0];
     };
 
@@ -91,7 +87,7 @@ export const useVideoCall = (selectedUser) => {
     return pc;
   };
 
-  // --- 3. HELPER FUNCTIONS ---
+  // HELPER FUNCTIONS
   const processIceQueue = async (pc) => {
     while (iceQueueRef.current.length > 0) {
       const candidate = iceQueueRef.current.shift();
@@ -118,15 +114,20 @@ export const useVideoCall = (selectedUser) => {
     }
   };
 
-  // --- 4. SOCKET LISTENERS ---
+  //  SOCKET LISTENERS
   useEffect(() => {
     if (!socket) return;
     isActiveCallRef.current = activeCall;
 
-    const handleIncoming = ({ callerId, offer, type }) => {
+    const handleIncoming = ({ callerId, offer, type, name, email }) => {
       if (type !== "VIDEO" || isActiveCallRef.current) return;
       activeRemoteRef.current = callerId;
-      setIncomingCall({ callerId, offer });
+      setIncomingCall({
+        callerId,
+        offer,
+        name: name,
+        email: email,
+      });
     };
 
     const handleAnswered = async ({ answer, type }) => {
@@ -171,27 +172,26 @@ export const useVideoCall = (selectedUser) => {
       socket.off("toggle-video");
     };
   }, [socket, activeCall]);
-
+  console.log(selectedUser, "testing of slelcted user");
+  console.log(selectedUser.name, "selected user name");
   // --- 5. CALL ACTIONS ---
   const startCall = async () => {
     if (!selectedUser?.id) return;
     setCalling(true);
     activeRemoteRef.current = selectedUser.id;
 
-    callTimeoutRef.current = setTimeout(() => {
-      socket.emit("call-timeout", {
-        receiverId: activeRemoteRef.current,
-        type: "VIDEO",
-      });
-      handleCleanup();
-    }, 30000);
-
+    // 1. Create the Peer Connection first
     const pc = createPeer(selectedUser.id);
+    // 2. Get the camera stream
     const stream = await getCamera();
-    if (stream) stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-
+    // 3. Use the helper to add tracks (Passing 'pc' and 'stream')
+    if (pc && stream) {
+      addLocalVideoTracks(pc, stream);
+    }
+    // 4. Create and send offer
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
+
     socket.emit("call-user", {
       receiverId: selectedUser.id,
       offer,
@@ -228,9 +228,8 @@ export const useVideoCall = (selectedUser) => {
 
   const handleCleanup = (msg) => {
     if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
-    if (peerRef.current) peerRef.current.close();
-    if (localStreamRef.current)
-      localStreamRef.current.getTracks().forEach((t) => t.stop());
+
+    closeVideoCall(peerRef.current, localStreamRef.current);
 
     peerRef.current = null;
     localStreamRef.current = null;

@@ -4,11 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start:api": "node server.js",
-    "start:socket": "node socketServer.js",
-    "dev:api": "nodemon server.js",
-    "dev:socket": "nodemon socketServer.js",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:socket\"",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "prisma": "prisma"
   },
   "keywords": [],

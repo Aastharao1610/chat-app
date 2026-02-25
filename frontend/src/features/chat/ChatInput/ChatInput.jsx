@@ -3,9 +3,12 @@ import { useState } from "react";
 import axios from "axios";
 import { SendHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDispatch } from "react-redux";
+import { addMessage } from "@/store/chatSlice";
 
 export default function ChatInput({ receiverId, receiverUser, chatId }) {
   const [text, setText] = useState("");
+  const dispatch = useDispatch();
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -31,7 +34,7 @@ export default function ChatInput({ receiverId, receiverUser, chatId }) {
         },
         { withCredentials: true },
       );
-
+      dispatch(addMessage(res.data.message));
       setText(""); // Clear input after send
     } catch (err) {
       console.error("Failed to send message:", err);

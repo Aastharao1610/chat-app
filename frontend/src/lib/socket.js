@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 let socket;
-console.log("SOCKET URL 👉", process.env.NEXT_PUBLIC_SOCKET_URL);
+console.log("SOCKET URL", process.env.NEXT_PUBLIC_SOCKET_URL);
 
 export const initSocket = (userId) => {
   if (!socket && typeof userId !== "undefined" && userId !== null) {
@@ -13,7 +13,7 @@ export const initSocket = (userId) => {
     });
 
     socket.on("connect", () => {
-      console.log("✅ Socket connected:", socket.id);
+      console.log(" Socket connected:", socket.id);
     });
   }
   return socket;

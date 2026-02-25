@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import ChatInput from "../ChatInput/ChatInput";
 import ChatHeader from "@/components/layout/ChatHeader";
 import { CheckCheck } from "lucide-react";
-import { setMessages } from "@/store/chatSlice";
+import { addMessage, setMessages } from "@/store/chatSlice";
 
 export default function ChatMessages({ selectedChat, onBack }) {
   const [callLogs, setCallLogs] = useState([]);
@@ -27,7 +27,9 @@ export default function ChatMessages({ selectedChat, onBack }) {
   // Filter only messages for the current chat
   const chatMessages = useMemo(() => {
     if (!selectedChat?.id) return [];
-    return allMessages.filter((msg) => msg.chatId === selectedChat.id);
+    return allMessages.filter(
+      (msg) => String(msg.chatId) === String(selectedChat.id),
+    );
   }, [allMessages, selectedChat]);
 
   useEffect(() => {
@@ -37,7 +39,10 @@ export default function ChatMessages({ selectedChat, onBack }) {
         const res = await axios.get(`/api/message/${selectedChat.id}`, {
           withCredentials: true,
         });
+        console.log(res, "resssssssssssss");
         dispatch(setMessages(res.data.messages || []));
+        // dispatch(addMessage(res.data.messages || []));
+        console.log(res.data.messages, "response of chat message");
       } catch (err) {
         console.error("Error fetching messages:", err);
       }
@@ -129,7 +134,7 @@ export default function ChatMessages({ selectedChat, onBack }) {
     }));
 
     return [...formattedMessages, ...formattedCalls].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
     );
   }, [chatMessages, callLogs]);
 
@@ -156,42 +161,74 @@ export default function ChatMessages({ selectedChat, onBack }) {
   const otherUser = selectedChat?.users?.find((u) => u.id !== user?.id);
 
   const receiverId = otherUser?.id;
+  // useEffect(() => {
+  //   const markMessagesAsRead = async () => {
+  //     //checking if there is any unread message
+  //     const unread = chatMessages.some(
+  //       (msg) => msg.receiverId === user?.id && !msg.read,
+  //     );
+
+  //     if (selectedChat?.id && unread) {
+  //       try {
+  //         await axios.patch(
+  //           `/api/message/messages/read/${selectedChat.id}`,
+  //           {},
+  //           { withCredentials: true },
+  //         );
+  //         // update redux state
+  //         const updatedMessages = chatMessages.map((msg) =>
+  //           msg.receiverId === user.id ? { ...msg, read: true } : msg,
+  //         );
+
+  //         dispatch(setMessages(updatedMessages));
+  //         if (window.socket) {
+  //           window.socket.emit("mark-read", {
+  //             chatId: selectedChat.id,
+  //             readerId: user.id,
+  //             senderId: otherUser.id,
+  //           });
+  //         }
+  //       } catch (err) {
+  //         console.error("Error marking messages as read:", err);
+  //       }
+  //     }
+  //   };
+
+  //   markMessagesAsRead();
+  //   // dispatch(
+  //   //   markMessagesAsRead({ chatId: selectedChat.id, readerId: user.id }),
+  //   // );
+  // }, [chatMessages, selectedChat, user.id, otherUser?.id]);
+
   useEffect(() => {
     const markMessagesAsRead = async () => {
-      //checking if there is any unread message
+      // Check if there are any unread messages sent TO you
       const unread = chatMessages.some(
         (msg) => msg.receiverId === user?.id && !msg.read,
       );
 
-      if (selectedChat?.id && unread) {
-        try {
-          await axios.patch(
-            `/api/message/messages/read/${selectedChat.id}`,
-            {},
-            { withCredentials: true },
-          );
-          // update redux state
-          const updatedMessages = chatMessages.map((msg) =>
-            msg.receiverId === user.id ? { ...msg, read: true } : msg,
-          );
+      if (selectedChat?.id && unread && window.socket) {
+        // REMOVE THE AXIOS CALL FROM HERE entirely
 
-          dispatch(setMessages(updatedMessages));
-          if (window.socket) {
-            window.socket.emit("mark-read", {
-              chatId: selectedChat.id,
-              readerId: user.id,
-              senderId: otherUser.id,
-            });
-          }
-        } catch (err) {
-          console.error("Error marking messages as read:", err);
-        }
+        // Use the socket to update the database and notify the other user
+        window.socket.emit("mark-read", {
+          chatId: selectedChat.id,
+          readerId: user.id,
+          senderId: otherUser.id,
+        });
+
+        // Optimistically update your local Redux so the blue ticks appear for you
+        dispatch(
+          markAsRead({
+            chatId: selectedChat.id,
+            readerId: user.id,
+          }),
+        );
       }
     };
 
     markMessagesAsRead();
-  }, [chatMessages, selectedChat, user.id, otherUser?.id]);
-
+  }, [chatMessages.length, selectedChat?.id]); // Trigger when messages change
   return (
     <div
       ref={containerRef}

@@ -10,6 +10,7 @@ import VideoCallUI from "../Call/videoCall/videoCall";
 export default function ChatHeader({ selectedUser, onBack }) {
   const [isTyping, setIsTyping] = useState(false);
   const onlineUsers = useSelector((state) => state.chat.onlineUsers);
+
   // Force both to strings to be 100% sure they match
   const isOnline = onlineUsers.some(
     (id) => String(id) === String(selectedUser?.id),
@@ -19,6 +20,13 @@ export default function ChatHeader({ selectedUser, onBack }) {
   const callLogic = useAudioCall(selectedUser);
   const videoLogic = useVideoCall(selectedUser);
 
+  const isAnyCallActive =
+    callLogic.calling ||
+    callLogic.activeCall ||
+    videoLogic.calling ||
+    videoLogic.activeCall;
+
+  console.log(isAnyCallActive, "isAnyActivecall checking the sta");
   useEffect(() => {
     const socket = window.socket;
     if (!socket || !selectedUser?.id) return;
@@ -55,10 +63,12 @@ export default function ChatHeader({ selectedUser, onBack }) {
             <div>
               <p className="font-semibold">{selectedUser?.name}</p>
               <p className="text-xs font-medium">
-                {isTyping ? (
-                  <span className="text-green-500 animate-pulse">
-                    Typing...
+                {callLogic.activeCall ? (
+                  <span className="text-green-500 font-bold animate-pulse">
+                    On call...
                   </span>
+                ) : isTyping ? (
+                  <span className="text-gray-500 animate-pulse">Typing...</span>
                 ) : isOnline ? (
                   <span className="text-blue-500">Online</span>
                 ) : (
@@ -70,15 +80,25 @@ export default function ChatHeader({ selectedUser, onBack }) {
 
           <div className="flex gap-2 md:gap-4">
             <button
-              className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full cursor-pointer hover:bg-gray-200 duration-300"
+              className={`p-2 rounded-full duration-300 transition-all ${
+                isAnyCallActive
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed opacity-50"
+                  : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 cursor-pointer"
+              }`}
               onClick={callLogic.startCall}
+              disabled={isAnyCallActive} // Disable button interaction
             >
               <Phone size={20} className="md:w-6 md:h-6" />
             </button>
 
             <button
               onClick={videoLogic.startCall}
-              className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full cursor-pointer hover:bg-gray-200 duration-300"
+              disabled={isAnyCallActive} // Disable button interaction
+              className={`p-2 rounded-full duration-300 transition-all ${
+                isAnyCallActive
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed opacity-50"
+                  : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 cursor-pointer"
+              }`}
             >
               <Video size={20} className="md:w-6 md:h-6" />
             </button>

@@ -18,7 +18,7 @@ export default function VideoCallUI({
   toggleVideo,
   isVideoOff,
   isRemoteVideoOff,
-  selectedUser, // ADDED THIS PROP
+  selectedUser,
 }) {
   const { user } = useSelector((state) => state.auth);
 
@@ -43,6 +43,7 @@ export default function VideoCallUI({
     const inital = email.charAt(0).toUpperCase();
     return { color, inital };
   };
+  const remoteUser = incomingCall && !calling ? incomingCall : selectedUser;
 
   return (
     <>
@@ -79,7 +80,7 @@ export default function VideoCallUI({
               Incoming Video Call
             </h3>
             <p className="text-slate-400 mb-8">
-              {selectedUser?.name || "Someone"} is inviting you to a video chat
+              {remoteUser?.name || "Someone"} is inviting you to a video chat
             </p>
             <div className="flex justify-center gap-6">
               <button
@@ -116,7 +117,7 @@ export default function VideoCallUI({
                   {getAvatarData(selectedUser?.email || "R")?.inital}
                 </div>
                 <p className="text-white text-xl font-medium mt-6">
-                  {selectedUser?.name || "Remote User"}
+                  {selectedUser?.name}
                 </p>
               </div>
             ) : (

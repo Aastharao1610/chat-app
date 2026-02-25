@@ -30,12 +30,13 @@ const SocketInitializer = () => {
 
     // 2. Real-time Message Receipt (Fixes "Refresh to see message")
     socket.on("receive-message", (message) => {
+      console.log("new message arrived", message);
       dispatch(addMessage(message));
       dispatch(updateChat({ id: message.chatId, lastMessage: message }));
     });
 
     // 3. Listen for Read Status (Fixes "Refresh to see read tick")
-    socket.on("messages-read", ({ chatId, readerId }) => {
+    socket.on("message-read", ({ chatId, readerId }) => {
       dispatch(markAsRead({ chatId, readerId }));
     });
 
@@ -62,6 +63,7 @@ const SocketInitializer = () => {
       });
 
       console.log("Answer sent");
+      console.log("call is answereddd");
     });
 
     return () => {
