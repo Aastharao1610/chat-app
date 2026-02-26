@@ -266,7 +266,7 @@ export default function ChatMessages({ selectedChat, onBack }) {
                         </span>
                       )}
                       <div
-                        className={`px-4 py-2 rounded-2xl text-sm relative ${
+                        className={`px-4 py-2 rounded-2xl text-sm relative break-words whitespace-pre-wrap ${
                           isSender
                             ? "bg-blue-500 text-white rounded-br-none"
                             : "bg-white text-black border border-gray-200 rounded-bl-none"

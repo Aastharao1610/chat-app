@@ -13,6 +13,7 @@ export default function AudioCallUI({
   toggleMute,
   isMuted,
 }) {
+  console.log(incomingCall, "INCOMING");
   return (
     <>
       {/* 1. Outgoing Call UI */}

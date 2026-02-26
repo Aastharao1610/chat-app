@@ -34,6 +34,39 @@ export const useVideoCall = (selectedUser) => {
 
   const socket = window.socket;
 
+  const handleCleanup = (msg) => {
+    if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+
+    closeVideoCall(peerRef.current, localStreamRef.current);
+
+    peerRef.current = null;
+    localStreamRef.current = null;
+    remoteStreamRef.current = null;
+    iceQueueRef.current = [];
+
+    setCallEndedMessage(
+      msg ||
+        (durationRef.current > 0
+          ? `Call Ended • ${formatTime(durationRef.current)}`
+          : "Call Ended"),
+    );
+    setActiveCall(false);
+    setCalling(false);
+    setIncomingCall(null);
+    setCallDuration(0);
+    durationRef.current = 0;
+    setIsMuted(false);
+    setIsVideoOff(false);
+    setIsVideoOff(false);
+
+    setTimeout(() => {
+      (setCallEndedMessage(""), 3000, []);
+    });
+  };
+  useEffect(() => {
+    if (!socket) return;
+  });
+
   useEffect(() => {
     const syncStreams = () => {
       if (localStreamRef.current && localVideoRef.current && !isVideoOff) {
@@ -163,6 +196,9 @@ export const useVideoCall = (selectedUser) => {
       setIsRemoteVideoOff(isVideoOff),
     );
 
+    socket.on("call-timeout", () => {
+      handleCleanup("Call Missed");
+    });
     return () => {
       socket.off("incoming-call");
       socket.off("call-answered");
@@ -170,6 +206,7 @@ export const useVideoCall = (selectedUser) => {
       socket.off("call-rejected");
       socket.off("call-ended");
       socket.off("toggle-video");
+      socket.off("call-timeout");
     };
   }, [socket, activeCall]);
   console.log(selectedUser, "testing of slelcted user");
@@ -180,15 +217,11 @@ export const useVideoCall = (selectedUser) => {
     setCalling(true);
     activeRemoteRef.current = selectedUser.id;
 
-    // 1. Create the Peer Connection first
     const pc = createPeer(selectedUser.id);
-    // 2. Get the camera stream
     const stream = await getCamera();
-    // 3. Use the helper to add tracks (Passing 'pc' and 'stream')
     if (pc && stream) {
       addLocalVideoTracks(pc, stream);
     }
-    // 4. Create and send offer
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
@@ -224,30 +257,6 @@ export const useVideoCall = (selectedUser) => {
       });
     }
     handleCleanup();
-  };
-
-  const handleCleanup = (msg) => {
-    if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
-
-    closeVideoCall(peerRef.current, localStreamRef.current);
-
-    peerRef.current = null;
-    localStreamRef.current = null;
-    remoteStreamRef.current = null;
-    iceQueueRef.current = [];
-
-    setCallEndedMessage(
-      msg ||
-        (durationRef.current > 0
-          ? `Call Ended • ${formatTime(durationRef.current)}`
-          : "Call Ended"),
-    );
-    setTimeout(() => setCallEndedMessage(""), 3000);
-    setActiveCall(false);
-    setCalling(false);
-    setIncomingCall(null);
-    setCallDuration(0);
-    durationRef.current = 0;
   };
 
   const formatCallDuration = (seconds) => {

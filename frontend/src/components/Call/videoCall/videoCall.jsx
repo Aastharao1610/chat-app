@@ -20,6 +20,7 @@ export default function VideoCallUI({
   isRemoteVideoOff,
   selectedUser,
 }) {
+  console.log("INCOMING VIDEO CALL", incomingCall);
   const { user } = useSelector((state) => state.auth);
 
   const googleColors = [

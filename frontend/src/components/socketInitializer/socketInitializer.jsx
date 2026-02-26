@@ -8,7 +8,6 @@ import {
   setOnlineUsers,
   markAsRead,
 } from "@/store/chatSlice";
-import { createPeerConnection } from "@/features/calls/webrtc/audio";
 
 const SocketInitializer = () => {
   const dispatch = useDispatch();
@@ -40,32 +39,36 @@ const SocketInitializer = () => {
       dispatch(markAsRead({ chatId, readerId }));
     });
 
-    socket.on("incoming-call", async ({ offer, callerId }) => {
-      console.log("Incoming offer:", offer);
-      console.log("📞 Incoming call from", callerId);
+    // socket.on("incoming-call", async ({ offer, callerId }) => {
+    //   console.log("Incoming offer:", offer);
+    //   console.log("📞 Incoming call from", callerId);
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    //   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      const peer = createPeerConnection();
+    //   const peer = createPeerConnection();
 
-      stream.getTracks().forEach((track) => {
-        peer.addTrack(track, stream);
-      });
+    //   stream.getTracks().forEach((track) => {
+    //     peer.addTrack(track, stream);
+    //   });
 
-      await peer.setRemoteDescription(new RTCSessionDescription(offer));
+    //   await peer.setRemoteDescription(new RTCSessionDescription(offer));
 
-      const answer = await peer.createAnswer();
-      await peer.setLocalDescription(answer);
+    //   const answer = await peer.createAnswer();
+    //   await peer.setLocalDescription(answer);
 
-      socket.emit("answer-call", {
-        callerId,
-        answer,
-      });
+    //   socket.emit("answer-call", {
+    //     callerId,
+    //     answer,
+    //   });
 
-      console.log("Answer sent");
-      console.log("call is answereddd");
-    });
+    //   console.log("Answer sent");
+    //   console.log("call is answereddd");
+    // });
 
+    // socket.on("call-timeout", () => {
+    //   console.log("Call timed out");
+    //   dispatch(resetCallState());
+    // });
     return () => {
       socket.off("get-online-users");
       socket.off("receive-message");

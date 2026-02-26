@@ -1,5 +1,6 @@
 import prisma from "../src/config/db.js";
 export const activeCalls = new Map();
+export const callTimers = new Map();
 
 export const handleCallEvents = (socket, io, userId) => {
   // call start
@@ -14,7 +15,8 @@ export const handleCallEvents = (socket, io, userId) => {
           type: type || "AUDIO",
         },
       });
-      activeCalls.set(`${userId}-${receiverId}`, newCall.id);
+      const key = `${userId}-${receiverId}`;
+      activeCalls.set(key, newCall.id);
 
       io.to(`user-${receiverId}`).emit("incoming-call", {
         callerId: userId,
@@ -22,6 +24,19 @@ export const handleCallEvents = (socket, io, userId) => {
         callId: newCall.id,
         type,
       });
+      console.log(
+        `You as a userid ${receiverId} are having call from ${userId}`,
+      );
+      const timer = setTimeout(async () => {
+        console.log("Call Timeout");
+        if (activeCalls.has(key)) {
+          await finalizeCall(key, userId, "MISSED");
+          io.to(`user-${receiverId}`).emit("call-timeout");
+          io.to(`user-${userId}`).emit(`call-timeout`);
+          console.log("call miseed due to timeout");
+        }
+      }, 30000);
+      callTimers.set(key, timer);
     } catch (error) {
       console.error("Call user error", error);
     }
@@ -36,6 +51,8 @@ export const handleCallEvents = (socket, io, userId) => {
       const key = `${callerId}-${userId}`; // Hyphen to match Map
       const callId = activeCalls.get(key);
 
+      clearTimeout(callTimers.get(key));
+      callTimers.delete(key);
       if (callId) {
         await prisma.call.update({
           where: { id: callId },
@@ -59,12 +76,18 @@ export const handleCallEvents = (socket, io, userId) => {
     const key = activeCalls.has(`${userId}-${targetId}`)
       ? `${userId}-${targetId}`
       : `${targetId}-${userId}`;
+
+    clearTimeout(callTimers.get(key));
+    callTimers.delete(key);
     await finalizeCall(key, userId, "COMPLETED");
     io.to(`user-${targetId}`).emit(`call-ended`, { type });
   });
 
   socket.on("reject-call", async ({ callerId, type }) => {
     const key = `${callerId}-${userId}`;
+
+    clearTimeout(callTimers.get(key));
+    callTimers.delete(key);
     await finalizeCall(key, userId, "REJECTED");
     io.to(`user-${callerId}`).emit("call-rejected", { type });
   });
@@ -88,8 +111,9 @@ async function finalizeCall(key, userId, defaultStatus) {
         : 0;
 
       let status = defaultStatus;
+
       if (!call.answeredAt) {
-        start =
+        status =
           String(userId) === String(call.callerId) ? "MISSED" : "REJECTED";
       }
       await prisma.call.update({
@@ -113,7 +137,7 @@ async function finalizeCall(key, userId, defaultStatus) {
 export const cleanupUserCalls = async (userId, io) => {
   for (const [key, callId] of activeCalls.entries()) {
     if (key.includes(String(userId))) {
-      const [cId, rId] = key.split("_");
+      const [cId, rId] = key.split("-");
       const targetId = cId === String(userId) ? rId : cId;
       await finalizeCall(key, userId, "COMPLETED");
       io.to(`user-${targetId}`).emit("call-ended", { reason: "disconnected" });
