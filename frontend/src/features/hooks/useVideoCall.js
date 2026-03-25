@@ -15,6 +15,7 @@ export const useVideoCall = (selectedUser) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isRemoteVideoOff, setIsRemoteVideoOff] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   // Refs for UI
   const localVideoRef = useRef(null);
@@ -26,6 +27,8 @@ export const useVideoCall = (selectedUser) => {
   const remoteStreamRef = useRef(null);
   const activeRemoteRef = useRef(null);
   const iceQueueRef = useRef([]);
+  const cameraStreamRef = useRef(null);
+  const screenStreamRef = useRef(null);
 
   // Utility Refs
   const callTimeoutRef = useRef(null);
@@ -37,10 +40,20 @@ export const useVideoCall = (selectedUser) => {
   const handleCleanup = (msg) => {
     if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
 
-    closeVideoCall(peerRef.current, localStreamRef.current);
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((t) => t.stop());
+    }
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
+    }
+
+    setIsScreenSharing(false);
 
     peerRef.current = null;
     localStreamRef.current = null;
+    cameraStreamRef.current = null;
+    screenStreamRef.current = null;
     remoteStreamRef.current = null;
     iceQueueRef.current = [];
 
@@ -57,54 +70,52 @@ export const useVideoCall = (selectedUser) => {
     durationRef.current = 0;
     setIsMuted(false);
     setIsVideoOff(false);
-    setIsVideoOff(false);
 
     setTimeout(() => {
-      (setCallEndedMessage(""), 3000, []);
-    });
+      setCallEndedMessage("");
+    }, 3000);
   };
   useEffect(() => {
     if (!socket) return;
   });
 
   useEffect(() => {
-    const syncStreams = () => {
-      if (localStreamRef.current && localVideoRef.current && !isVideoOff) {
-        if (localVideoRef.current.srcObject !== localStreamRef.current) {
-          console.log("Syncing local stream to UI");
-          localVideoRef.current.srcObject = localStreamRef.current;
-          localVideoRef.current.play().catch(() => {});
-        }
-      }
+    if (localStreamRef.current && localVideoRef.current && !isVideoOff) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+    }
 
-      if (
-        remoteStreamRef.current &&
-        remoteVideoRef.current &&
-        !isRemoteVideoOff
-      ) {
-        if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
-          console.log(" Syncing remote stream to UI");
-          remoteVideoRef.current.srcObject = remoteStreamRef.current;
-          remoteVideoRef.current.play().catch(() => {});
-        }
-      }
-    };
+    if (
+      remoteStreamRef.current &&
+      remoteVideoRef.current &&
+      !isRemoteVideoOff
+    ) {
+      remoteVideoRef.current.srcObject = remoteStreamRef.current;
+    }
+  }, [activeCall, isVideoOff, isRemoteVideoOff]);
 
-    syncStreams();
-
-    const interval = setInterval(syncStreams, 1000);
-    return () => clearInterval(interval);
-  }, [activeCall, calling, isVideoOff, isRemoteVideoOff]);
-
-  //  PEER CREATION
   const createPeer = (remoteId) => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
+    pc.onconnectionstatechange = () => {
+      const state = pc.connectionState;
 
+      if (state === "disconnected" || state === "failed") {
+        handleCleanup("Connection lost");
+      }
+
+      if (state === "closed") {
+        handleCleanup();
+      }
+    };
     pc.ontrack = (event) => {
-      console.log("Remote track received");
+      console.log("Remote track:", event.track.kind);
+
       remoteStreamRef.current = event.streams[0];
+
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+      }
     };
 
     pc.onicecandidate = (event) => {
@@ -134,12 +145,14 @@ export const useVideoCall = (selectedUser) => {
 
   const getCamera = async () => {
     try {
-      if (localStreamRef.current) return localStreamRef.current;
+      // if (localStreamRef.current) return localStreamRef.current;
+      if (cameraStreamRef.current) return cameraStreamRef.current;
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
       });
+      cameraStreamRef.current = stream;
       localStreamRef.current = stream;
       return stream;
     } catch (err) {
@@ -279,6 +292,122 @@ export const useVideoCall = (selectedUser) => {
     `${Math.floor(s / 60)
       .toString()
       .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+  console.log("TESTTT");
+
+  // const screenShare = async () => {
+  //   try {
+  //     if (isScreenSharing) return;
+
+  //     const screenStream = await navigator.mediaDevices.getDisplayMedia({
+  //       video: true,
+  //     });
+
+  //     const screenTrack = screenStream.getVideoTracks()[0];
+  //     const pc = peerRef.current;
+
+  //     if (pc) {
+  //       const sender = pc
+  //         .getSenders()
+  //         .find((s) => s.track && s.track.kind === "video");
+
+  //       if (sender) {
+  //         await sender.replaceTrack(screenTrack);
+  //       }
+  //     }
+
+  //     setIsScreenSharing(true);
+
+  //     screenTrack.onended = async () => {
+  //       const cameraTrack = localStreamRef.current?.getVideoTracks()[0];
+
+  //       if (pc) {
+  //         const sender = pc
+  //           .getSenders()
+  //           .find((s) => s.track && s.track.kind === "video");
+
+  //         if (sender && cameraTrack) {
+  //           await sender.replaceTrack(cameraTrack);
+  //         }
+  //       }
+
+  //       // stop screen stream properly
+  //       screenStream.getTracks().forEach((track) => track.stop());
+
+  //       setIsScreenSharing(false);
+  //     };
+  //   } catch (err) {
+  //     console.error("Screen share error:", err);
+  //   }
+  // };
+
+  const screenShare = async () => {
+    try {
+      if (!cameraStreamRef.current) return;
+      const pc = peerRef.current;
+      if (!pc) return;
+
+      if (isScreenSharing) {
+        stopScreenShare();
+        return;
+      }
+
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+      });
+
+      const screenTrack = screenStream.getVideoTracks()[0];
+      screenStreamRef.current = screenStream;
+
+      const sender = pc
+        .getSenders()
+        .find((s) => s.track && s.track.kind === "video");
+
+      if (sender) {
+        await sender.replaceTrack(screenTrack);
+      }
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = screenStream;
+      }
+
+      setIsScreenSharing(true);
+
+      screenTrack.onended = () => {
+        stopScreenShare();
+      };
+    } catch (err) {
+      console.error("Screen share error:", err);
+    }
+  };
+
+  const stopScreenShare = async () => {
+    const pc = peerRef.current;
+    const cameraStream = cameraStreamRef.current;
+    const screenStream = screenStreamRef.current;
+
+    if (!pc || !cameraStream) return;
+
+    const cameraTrack = cameraStream.getVideoTracks()[0];
+
+    const sender = pc
+      .getSenders()
+      .find((s) => s.track && s.track.kind === "video");
+
+    if (sender && cameraTrack) {
+      await sender.replaceTrack(cameraTrack);
+    }
+
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = cameraStream;
+    }
+
+    if (screenStream) {
+      screenStream.getTracks().forEach((t) => t.stop());
+      screenStreamRef.current = null;
+    }
+
+    setIsScreenSharing(false);
+  };
 
   useEffect(() => {
     let interval;
@@ -315,6 +444,8 @@ export const useVideoCall = (selectedUser) => {
     isMuted,
     isVideoOff,
     isRemoteVideoOff,
+    screenShare,
+    setIsScreenSharing,
     toggleMute: () => setIsMuted(toggleMute(localStreamRef.current)),
     toggleVideo: () => {
       const off = toggleVideo(localStreamRef.current);

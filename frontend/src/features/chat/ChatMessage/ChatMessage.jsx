@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import ChatInput from "../ChatInput/ChatInput";
 import ChatHeader from "@/components/layout/ChatHeader";
 import { CheckCheck } from "lucide-react";
-import { addMessage, setMessages } from "@/store/chatSlice";
+import { addMessage, markAsRead, setMessages } from "@/store/chatSlice";
 
 export default function ChatMessages({ selectedChat, onBack }) {
   const [callLogs, setCallLogs] = useState([]);
@@ -161,44 +161,6 @@ export default function ChatMessages({ selectedChat, onBack }) {
   const otherUser = selectedChat?.users?.find((u) => u.id !== user?.id);
 
   const receiverId = otherUser?.id;
-  // useEffect(() => {
-  //   const markMessagesAsRead = async () => {
-  //     //checking if there is any unread message
-  //     const unread = chatMessages.some(
-  //       (msg) => msg.receiverId === user?.id && !msg.read,
-  //     );
-
-  //     if (selectedChat?.id && unread) {
-  //       try {
-  //         await axios.patch(
-  //           `/api/message/messages/read/${selectedChat.id}`,
-  //           {},
-  //           { withCredentials: true },
-  //         );
-  //         // update redux state
-  //         const updatedMessages = chatMessages.map((msg) =>
-  //           msg.receiverId === user.id ? { ...msg, read: true } : msg,
-  //         );
-
-  //         dispatch(setMessages(updatedMessages));
-  //         if (window.socket) {
-  //           window.socket.emit("mark-read", {
-  //             chatId: selectedChat.id,
-  //             readerId: user.id,
-  //             senderId: otherUser.id,
-  //           });
-  //         }
-  //       } catch (err) {
-  //         console.error("Error marking messages as read:", err);
-  //       }
-  //     }
-  //   };
-
-  //   markMessagesAsRead();
-  //   // dispatch(
-  //   //   markMessagesAsRead({ chatId: selectedChat.id, readerId: user.id }),
-  //   // );
-  // }, [chatMessages, selectedChat, user.id, otherUser?.id]);
 
   useEffect(() => {
     const markMessagesAsRead = async () => {

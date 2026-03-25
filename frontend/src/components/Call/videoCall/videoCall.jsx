@@ -1,6 +1,7 @@
 "use client";
 import { Mic, PhoneOff, MicOff, Video, VideoOffIcon } from "lucide-react";
 import { useSelector } from "react-redux";
+import { ScreenShare } from "lucide-react";
 
 export default function VideoCallUI({
   calling,
@@ -19,6 +20,8 @@ export default function VideoCallUI({
   isVideoOff,
   isRemoteVideoOff,
   selectedUser,
+  isScreenSharing,
+  screenShare,
 }) {
   console.log("INCOMING VIDEO CALL", incomingCall);
   const { user } = useSelector((state) => state.auth);
@@ -157,7 +160,7 @@ export default function VideoCallUI({
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover scale-x-[-1]" // Mirrored for natural look
+                className={`w-full h-full object-cover ${isScreenSharing ? "scale-x-[1]" : ""} `} // Mirrored for natural look
               />
             )}
           </div>
@@ -189,6 +192,19 @@ export default function VideoCallUI({
               ) : (
                 <Video size={22} className="text-white" />
               )}
+            </button>
+            <button
+              onClick={screenShare}
+              // className="p-4 rounded-full transition bg-[#3c4043] hover:bg-blue-600 group"
+              className={`p-4 rounded-full transition ${
+                isScreenSharing ? "bg-blue-600" : "bg-[#3c4043]"
+              }`}
+              title="Share Screen"
+            >
+              <ScreenShare
+                size={22}
+                className="text-white group-hover:scale-110 transition-transform"
+              />
             </button>
           </div>
         </div>
